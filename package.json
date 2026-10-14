@@ -2,7 +2,9 @@
   "name": "splitly",
   "private": true,
   "packageManager": "pnpm@9.15.0",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "pnpm --filter @splitly/web dev",
     "build": "pnpm -r build",
@@ -11,6 +13,8 @@
     "test": "pnpm -r test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.1",
     "typescript": "^5.6.3"
   }
 }
