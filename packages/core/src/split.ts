@@ -55,6 +55,9 @@ export function splitPercent(totalCents: Cents, shares: PercentShare[]): Allocat
   }));
   const eligible = sorted.flatMap((s, i) => (s.bps > 0 ? [i] : []));
   let leftover = totalCents - result.reduce((acc, r) => acc + r.amountCents, 0);
+  if (leftover > 0 && eligible.length === 0) {
+    throw new Error("splitPercent: leftover cents but no member with bps > 0");
+  }
   for (let k = 0; leftover > 0; k = (k + 1) % eligible.length) {
     result[eligible[k]!]!.amountCents += 1;
     leftover -= 1;
