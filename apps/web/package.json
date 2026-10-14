@@ -9,10 +9,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^14.2.0",
+    "lucide-react": "^1.57.0",
     "next": "^15.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "server-only": "^0.0.1",
+    "tailwind-merge": "^3.7.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
