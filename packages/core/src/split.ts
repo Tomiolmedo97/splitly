@@ -35,7 +35,8 @@ export interface PercentShare {
 
 /**
  * Percent split in basis points (must sum to 10000). Each member gets
- * floor(total * bps / 10000); leftover cents go one each in ascending id order.
+ * floor(total * bps / 10000); leftover cents go one each, in ascending id
+ * order, only to members with bps > 0 (a 0% member never receives cents).
  */
 export function splitPercent(totalCents: Cents, shares: PercentShare[]): Allocation[] {
   assertTotal(totalCents);
@@ -52,9 +53,10 @@ export function splitPercent(totalCents: Cents, shares: PercentShare[]): Allocat
     memberId: s.memberId,
     amountCents: Math.floor((totalCents * s.bps) / 10000),
   }));
+  const eligible = sorted.flatMap((s, i) => (s.bps > 0 ? [i] : []));
   let leftover = totalCents - result.reduce((acc, r) => acc + r.amountCents, 0);
-  for (let i = 0; leftover > 0; i = (i + 1) % result.length) {
-    result[i]!.amountCents += 1;
+  for (let k = 0; leftover > 0; k = (k + 1) % eligible.length) {
+    result[eligible[k]!]!.amountCents += 1;
     leftover -= 1;
   }
   return result;
