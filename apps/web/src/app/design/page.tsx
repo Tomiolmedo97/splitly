@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
+import { Geist } from "next/font/google";
 import { DesignShowcase } from "@/components/design/design-showcase";
 
+const geist = Geist({ subsets: ["latin"], display: "swap" });
+
 export const metadata: Metadata = {
-  title: "Propuestas de diseño · Splitly",
+  title: "Sistema de diseño · Splitly",
   robots: { index: false, follow: false },
 };
 
 export default function DesignPage() {
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <header className="mb-6 max-w-2xl">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Tres caminos para Splitly</h1>
-        <p className="mt-2 text-zinc-600">
-          Cada propuesta muestra su paleta, el logo y una tarjeta de balance real. Tocá &quot;Simular&quot; para ver los
-          números animados, las deudas que se reacomodan y el confeti cuando alguien queda al día.
+    <main className={`${geist.className} mx-auto max-w-6xl px-4 py-12 sm:px-6`} style={{ color: "#12312B" }}>
+      <header className="mb-8 max-w-2xl">
+        <h1 className="text-[28px] font-semibold tracking-tight sm:text-[40px]">Splitly en Menta fresca</h1>
+        <p className="mt-2 text-[16px] text-[#4B6B63]">
+          El sistema elegido, en claro y oscuro. Tocá &quot;Simular&quot; para ver los números contando, las deudas
+          que se reacomodan y el confeti cuando alguien queda al día.
         </p>
       </header>
       <DesignShowcase />
