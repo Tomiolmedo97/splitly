@@ -8,9 +8,11 @@ Contenedor móvil 390 px, márgenes 16, separación entre bloques 24.
 Splitly                    28/600
 Las cuentas claras entre amigos   16/400 muted
 
-[ Continuar con Google ]   botón primario, alto 48
-[ Continuar con email  ]   botón secundario (borde)
-Términos · Privacidad      12 muted
+Email        ______________________
+Contraseña   ______________ [ver]
+[ Ingresar ]               botón primario, alto 48
+¿No tenés cuenta? Crear cuenta    14, link primario #0F766E
+Error inline bajo el campo, en negativo
 ```
 Animación: el logo se arma partiendo la S (300 ms, se omite con reduced-motion).
 
@@ -37,11 +39,32 @@ Saldos
   Juan   − $ 15.000 ↓
   Sofi   − $ 30.000 ↓
 Cómo quedar al día
-  Juan  ──→  Ana   $ 15.000   [ Saldar ]
-  Sofi  ──→  Ana   $ 30.000   [ Saldar ]
+  Juan  ──→  Ana   $ 15.000
+  Sofi  ──→  Ana   $ 30.000      (solo informativo, sin acción)
                       [ + Agregar gasto ]  botón flotante primario
 ```
-Flechas animadas al recalcular deudas (reacomodo 250 ms).
+Flechas animadas al recalcular deudas (reacomodo 250 ms). Al guardar un gasto que deja a alguien en 0: número cuenta a 0, destello limón y confeti.
+
+## 3b. Gastos (tab) y detalle del gasto
+```
+[ Saldos ] [ Gastos ]
+Hoy
+  Cena          pagó Ana    $ 12.000
+Ayer
+  Nafta         pagó Juan   $ 30.000
+```
+Del más nuevo al más viejo, agrupado por día. Tocar una fila abre el detalle:
+```
+←  Cena                         [ Editar ]
+$ 12.000                         40/600
+Pagó Ana · 14 oct
+División (igual)
+  Ana   $ 4.000
+  Juan  $ 4.000
+  Sofi  $ 4.000
+[ Borrar gasto ]                 texto negativo, pide confirmación
+```
+Editar reutiliza la pantalla de Nuevo gasto con los datos cargados.
 
 ## 4. Nuevo gasto
 ```
@@ -57,7 +80,26 @@ Falta repartir: $ 0,00 ✓          (negativo + aviso si no cuadra)
 ```
 Guardar deshabilitado hasta que cierre la suma.
 
-## 5. Saldar deuda
+## 5. Nuevo grupo
+```
+×  Nuevo grupo                    [ Crear ]
+Nombre       ______________________
+Moneda       ( ARS ) ( USD )
+Miembros
+  Tomas (vos)
+  Juan  (sin cuenta)
+  [ + Agregar por email ]  [ + Agregar solo con nombre ]
+```
+Los miembros sin cuenta llevan la etiqueta "sin cuenta" en muted y funcionan igual en gastos y saldos.
+Crear deshabilitado sin nombre. Al crear, entra directo al detalle del grupo.
+
+## Estados comunes
+Vacío: ilustración lineal mínima + una acción. Carga: skeletons con el radio real.
+Error: texto negativo + acción para reintentar. Foco visible: anillo de 2 px primario.
+
+## Próximas versiones (fuera del MVP)
+- Ingreso con Google.
+- Pantalla Saldar deuda
 ```
 ←  Saldar
 Juan le paga a Ana
@@ -68,6 +110,3 @@ Nota (opcional) ___________________
 ```
 Al confirmar: número cuenta a 0, destello limón y confeti solo si la persona queda al día.
 
-## Estados comunes
-Vacío: ilustración lineal mínima + una acción. Carga: skeletons con el radio real.
-Error: texto negativo + acción para reintentar. Foco visible: anillo de 2 px primario.
