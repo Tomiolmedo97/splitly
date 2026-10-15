@@ -11,7 +11,7 @@ export type DesignTheme = {
   name: string;
   tagline: string;
   dark: boolean;
-  status: "elegida" | "descartada";
+  status: "elegida";
   colors: ThemeColors;
 };
 
@@ -35,25 +35,3 @@ export const mentaDark: DesignTheme = {
     celebrate: "#FDE047", logoTop: "#ECF5F2", logoBottom: "#2DD4BF",
   },
 };
-
-/** Referencias descartadas, con los ajustes de Design Bot. */
-export const discarded: DesignTheme[] = [
-  {
-    id: "mango", name: "Mango y Lima", status: "descartada", dark: false,
-    tagline: "Más llamativa, pero cansa en uso diario.",
-    colors: {
-      bg: "#FBF7F2", surface: "#FFFFFF", text: "#2B1A17", muted: "#6B4F48", border: "#EDE4DA",
-      primary: "#C2412F", onPrimary: "#FFFFFF", positive: "#2F6B1F", negative: "#B42318",
-      celebrate: "#C6F432", logoTop: "#2B1A17", logoBottom: "#C2412F",
-    },
-  },
-  {
-    id: "aurora", name: "Aurora", status: "descartada", dark: true,
-    tagline: "Oscura y sobria, se ve genérica rápido.",
-    colors: {
-      bg: "#0B0B10", surface: "#16161D", text: "#F5F3FF", muted: "#B9B2D9", border: "#26262F",
-      primary: "#A78BFA", onPrimary: "#0B0B10", positive: "#5EEAD4", negative: "#FDA4AF",
-      celebrate: "#A78BFA", logoTop: "#F5F3FF", logoBottom: "#A78BFA",
-    },
-  },
-];
