@@ -10,11 +10,13 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r typecheck",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "lint:api": "redocly lint docs/api/openapi.yaml"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.64.1",
+    "@redocly/cli": "^2.64.1",
     "typescript": "^5.6.3"
   }
 }
