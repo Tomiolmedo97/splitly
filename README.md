@@ -8,11 +8,11 @@ Monorepo con pnpm workspaces:
 
 ```
 apps/
-  web/          # Next.js (App Router, TypeScript, Tailwind v4)
+  web/          # Next.js (App Router, TypeScript, Tailwind v4) + Prisma (apps/web/prisma)
 packages/
   core/         # Lógica de dominio pura: división de gastos, balances, simplificación de deudas
 .github/
-  workflows/ci.yml   # CI: install, typecheck, tests
+  workflows/ci.yml   # CI: install, Prisma validate/generate, typecheck, tests
   dependabot.yml
 ```
 
@@ -34,5 +34,23 @@ pnpm dev        # levanta apps/web
 pnpm typecheck
 pnpm test
 ```
+
+### Base de datos (Prisma + Neon Postgres 17)
+
+El esquema está en `apps/web/prisma/schema.prisma` y las migraciones en `apps/web/prisma/migrations`.
+
+```bash
+pnpm --filter @splitly/web db:generate   # genera Prisma Client
+pnpm --filter @splitly/web db:migrate    # prisma migrate deploy (usa DIRECT_URL)
+pnpm --filter @splitly/web db:seed       # datos de ejemplo: SOLO local o VERCEL_ENV=preview
+```
+
+- `DATABASE_URL`: conexión con pooler (la usa la app). `DIRECT_URL`: conexión directa (migraciones).
+- Para una migración nueva: editar el schema y correr
+  `pnpm --filter @splitly/web exec prisma migrate dev --name <nombre>` contra una base local o un branch de Neon.
+- Bajas lógicas: los integrantes quitados quedan con `Member.removedAt` y los gastos borrados con `Expense.deletedAt`.
+  **Los balances siempre ignoran los gastos con `deletedAt`**. Borrar un grupo sí es físico (primero sus gastos, después el grupo, en una transacción).
+- El nombre de un invitado es único por grupo solo entre invitados activos (índice parcial escrito a mano en la migración inicial).
+- Usuarios del seed: `tomas@example.com` / `lucia@example.com`, contraseña `splitly-demo-123`.
 
 Requiere Node >= 20 y pnpm 9.
