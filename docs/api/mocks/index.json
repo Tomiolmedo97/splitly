@@ -1,0 +1,137 @@
+{
+  "$comment": "Índice de mocks: qué endpoint y status representa cada archivo. Lo valida apps/web/src/lib/api-contract.test.ts.",
+  "mocks": [
+    {
+      "file": "auth.register.201.json",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "status": 201
+    },
+    {
+      "file": "auth.register.409.json",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "status": 409
+    },
+    {
+      "file": "auth.register.400.json",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "status": 400
+    },
+    {
+      "file": "auth.session.200.json",
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "file": "me.get.200.json",
+      "method": "GET",
+      "path": "/api/me",
+      "status": 200
+    },
+    {
+      "file": "me.get.401.json",
+      "method": "GET",
+      "path": "/api/me",
+      "status": 401
+    },
+    {
+      "file": "groups.list.200.json",
+      "method": "GET",
+      "path": "/api/groups",
+      "status": 200
+    },
+    {
+      "file": "groups.create.201.json",
+      "method": "POST",
+      "path": "/api/groups",
+      "status": 201
+    },
+    {
+      "file": "groups.get.200.json",
+      "method": "GET",
+      "path": "/api/groups/{groupId}",
+      "status": 200
+    },
+    {
+      "file": "groups.get.404.json",
+      "method": "GET",
+      "path": "/api/groups/{groupId}",
+      "status": 404
+    },
+    {
+      "file": "groups.update.200.json",
+      "method": "PATCH",
+      "path": "/api/groups/{groupId}",
+      "status": 200
+    },
+    {
+      "file": "groups.update.409.json",
+      "method": "PATCH",
+      "path": "/api/groups/{groupId}",
+      "status": 409
+    },
+    {
+      "file": "members.list.200.json",
+      "method": "GET",
+      "path": "/api/groups/{groupId}/members",
+      "status": 200
+    },
+    {
+      "file": "members.create.201.json",
+      "method": "POST",
+      "path": "/api/groups/{groupId}/members",
+      "status": 201
+    },
+    {
+      "file": "members.create.409.json",
+      "method": "POST",
+      "path": "/api/groups/{groupId}/members",
+      "status": 409
+    },
+    {
+      "file": "members.update.200.json",
+      "method": "PATCH",
+      "path": "/api/groups/{groupId}/members/{memberId}",
+      "status": 200
+    },
+    {
+      "file": "members.delete.409.json",
+      "method": "DELETE",
+      "path": "/api/groups/{groupId}/members/{memberId}",
+      "status": 409
+    },
+    {
+      "file": "members.delete.403.json",
+      "method": "DELETE",
+      "path": "/api/groups/{groupId}/members/{memberId}",
+      "status": 403
+    },
+    {
+      "file": "balances.get.200.json",
+      "method": "GET",
+      "path": "/api/groups/{groupId}/balances",
+      "status": 200
+    },
+    {
+      "file": "expenses.create.201.json",
+      "method": "POST",
+      "path": "/api/groups/{groupId}/expenses",
+      "status": 201
+    },
+    {
+      "file": null,
+      "method": "DELETE",
+      "path": "/api/groups/{groupId}",
+      "status": 204
+    },
+    {
+      "file": null,
+      "method": "DELETE",
+      "path": "/api/groups/{groupId}/members/{memberId}",
+      "status": 204
+    }
+  ]
+}

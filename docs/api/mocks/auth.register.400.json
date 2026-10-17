@@ -1,0 +1,13 @@
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": {
+      "fieldErrors": {
+        "password": [
+          "String must contain at least 8 character(s)"
+        ]
+      }
+    }
+  }
+}

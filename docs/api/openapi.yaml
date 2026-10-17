@@ -1,0 +1,921 @@
+openapi: 3.1.0
+info:
+  title: Splitly API
+  version: 0.1.0
+  summary: API de Splitly (MVP) para dividir gastos en grupo.
+  description: |
+    Contrato de la API REST de Splitly (Next.js Route Handlers + Prisma + Postgres).
+
+    **Convenciones**
+    - La plata va SIEMPRE en **centavos enteros** (`*Cents`, `integer`). Nunca decimales.
+      Ejemplo: `$ 1.234,56` → `123456`.
+    - Los porcentajes van en **puntos básicos** (`basisPoints`): `10000` = 100 %.
+    - Saldos (`balanceCents`) con signo: **positivo = le deben**, **negativo = debe**.
+      La suma de los saldos de un grupo siempre es 0.
+    - Moneda por grupo: `ARS` (por defecto) o `USD`. Un gasto copia la moneda del grupo.
+    - Fechas y horas en ISO 8601 (UTC). La fecha de un gasto es solo día (`YYYY-MM-DD`).
+    - IDs: cuid (strings opacos).
+
+    **Autenticación**: sesión de Auth.js guardada en la base; el navegador manda la
+    cookie de sesión (`authjs.session-token`, o `__Secure-authjs.session-token` en HTTPS).
+
+    **Permisos**: solo los integrantes de un grupo pueden verlo o modificarlo.
+    Cualquier integrante puede editar o borrar el grupo, sus integrantes y sus gastos.
+    Si no sos integrante, la respuesta es **404 NOT_FOUND** (igual que si el grupo no
+    existiera) para no revelar qué grupos existen. **403 FORBIDDEN** queda reservado
+    para integrantes que intentan algo no permitido.
+
+    **Errores**: siempre `{ "error": { "code", "message", "details"? } }`. El FE elige
+    el texto visible por `code` + `details.reason` (textos en `docs/design/textos.md`);
+    `message` es solo para logs.
+
+    **Alcance**: Sprint 1 = auth, grupos, integrantes y balances. Los endpoints de
+    gastos están marcados como **Sprint 2** (`x-sprint: 2`) y sus esquemas ya son definitivos.
+  license:
+    name: Privado (todos los derechos reservados)
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: /
+    description: Mismo origen que la app web (local, preview de Vercel o producción en gru1).
+security:
+  - sessionCookie: []
+tags:
+  - name: Auth
+    description: Registro, login y sesión (Auth.js con credenciales).
+  - name: Grupos
+    description: Grupos donde sos integrante.
+  - name: Integrantes
+    description: Integrantes de un grupo (con cuenta o invitados).
+  - name: Balances
+    description: Saldos netos por integrante.
+  - name: Gastos
+    description: Sprint 2.
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Crear cuenta con email y contraseña
+      description: |
+        Crea el usuario (email en minúsculas, contraseña hasheada). **No** inicia sesión:
+        después hay que hacer login con `POST /api/auth/callback/credentials`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Cuenta creada.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserResponse" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "409":
+          description: "Email ya registrado (`details.reason = EMAIL_TAKEN`)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/auth/csrf:
+    get:
+      tags: [Auth]
+      operationId: getCsrfToken
+      summary: Token CSRF de Auth.js (requerido para login y logout)
+      description: Endpoint propio de Auth.js. Devuelve el token y setea la cookie CSRF.
+      security: []
+      responses:
+        "200":
+          description: Token CSRF.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [csrfToken]
+                properties:
+                  csrfToken: { type: string }
+
+  /api/auth/callback/credentials:
+    post:
+      tags: [Auth]
+      operationId: loginWithCredentials
+      summary: Login con email y contraseña (Auth.js)
+      description: |
+        Endpoint propio de Auth.js (provider `credentials`). Recibe un formulario con el
+        `csrfToken` de `GET /api/auth/csrf`. Si las credenciales son válidas, setea la
+        cookie de sesión y redirige a `callbackUrl`. Si no, redirige con `?error=CredentialsSignin`.
+        Desde React conviene usar `signIn("credentials", …)` o la Server Action `login`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [email, password, csrfToken]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                csrfToken: { type: string }
+                callbackUrl: { type: string }
+      responses:
+        "302":
+          description: Redirección (con cookie de sesión si el login fue exitoso).
+          headers:
+            Set-Cookie:
+              description: Cookie de sesión `authjs.session-token` (HttpOnly, SameSite=Lax, Secure en HTTPS).
+              schema: { type: string }
+
+  /api/auth/signout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Logout (Auth.js)
+      description: Endpoint propio de Auth.js. Borra la sesión de la base y la cookie. Requiere `csrfToken`.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [csrfToken]
+              properties:
+                csrfToken: { type: string }
+                callbackUrl: { type: string }
+      responses:
+        "302":
+          description: Redirección a `callbackUrl` con la cookie de sesión borrada.
+
+  /api/auth/session:
+    get:
+      tags: [Auth]
+      operationId: getSession
+      summary: Sesión actual (Auth.js)
+      description: Endpoint propio de Auth.js. Sin sesión devuelve `null` (con 200).
+      security: []
+      responses:
+        "200":
+          description: Sesión actual o `null`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: "null"
+                  - $ref: "#/components/schemas/AuthSession"
+
+  /api/me:
+    get:
+      tags: [Auth]
+      operationId: getMe
+      summary: Usuario logueado
+      responses:
+        "200":
+          description: Datos del usuario de la sesión.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserResponse" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+
+  /api/groups:
+    get:
+      tags: [Grupos]
+      operationId: listGroups
+      summary: Mis grupos
+      description: Grupos donde sos integrante, del más reciente al más viejo, con tu saldo en cada uno.
+      responses:
+        "200":
+          description: Lista de grupos.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GroupListResponse" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+    post:
+      tags: [Grupos]
+      operationId: createGroup
+      summary: Crear grupo
+      description: Quien crea el grupo queda como primer integrante, vinculado a su usuario.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateGroupRequest" }
+      responses:
+        "201":
+          description: Grupo creado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GroupDetailResponse" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+
+  /api/groups/{groupId}:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+    get:
+      tags: [Grupos]
+      operationId: getGroup
+      summary: Detalle de un grupo
+      responses:
+        "200":
+          description: Grupo con integrantes y balances.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GroupDetailResponse" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Grupos]
+      operationId: updateGroup
+      summary: Editar grupo
+      description: |
+        Cambia el nombre y/o la moneda. **La moneda solo se puede cambiar mientras el
+        grupo no tenga gastos** (`hasExpenses = false`); si no, 409 con
+        `details.reason = CURRENCY_LOCKED`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateGroupRequest" }
+      responses:
+        "200":
+          description: Grupo actualizado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GroupDetailResponse" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: "Cambio de moneda con gastos (`details.reason = CURRENCY_LOCKED`)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      tags: [Grupos]
+      operationId: deleteGroup
+      summary: Borrar grupo
+      description: Borra el grupo con sus integrantes y gastos. Cualquier integrante puede hacerlo.
+      responses:
+        "204": { description: Grupo borrado. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/groups/{groupId}/members:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+    get:
+      tags: [Integrantes]
+      operationId: listMembers
+      summary: Integrantes del grupo
+      description: Ordenados por fecha de alta.
+      responses:
+        "200":
+          description: Integrantes.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberListResponse" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [Integrantes]
+      operationId: createMember
+      summary: Agregar integrante invitado
+      description: En Sprint 1 se agregan invitados sin cuenta (`userId = null`). El nombre es único por grupo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberRequest" }
+      responses:
+        "201":
+          description: Integrante creado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberResponse" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: "Nombre repetido en el grupo (`details.reason = MEMBER_DUPLICATE`)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/groups/{groupId}/members/{memberId}:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+      - $ref: "#/components/parameters/MemberId"
+    patch:
+      tags: [Integrantes]
+      operationId: updateMember
+      summary: Renombrar integrante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberRequest" }
+      responses:
+        "200":
+          description: Integrante actualizado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberResponse" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: "Nombre repetido en el grupo (`details.reason = MEMBER_DUPLICATE`)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      tags: [Integrantes]
+      operationId: deleteMember
+      summary: Quitar integrante
+      description: |
+        Reglas:
+        - saldo distinto de 0 → 409 `MEMBER_HAS_BALANCE`;
+        - saldo 0 pero aparece en gastos → 403 `MEMBER_HAS_EXPENSES` (se conserva el historial);
+        - integrante con cuenta → 403 `MEMBER_LINKED_TO_USER` (en Sprint 1 solo se quitan invitados).
+      responses:
+        "204": { description: Integrante quitado. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403":
+          description: "No permitido (`details.reason = MEMBER_HAS_EXPENSES | MEMBER_LINKED_TO_USER`)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: "Saldo distinto de 0 (`details.reason = MEMBER_HAS_BALANCE`)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/groups/{groupId}/balances:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+    get:
+      tags: [Balances]
+      operationId: getBalances
+      summary: Saldos por integrante
+      description: |
+        Saldo neto de cada integrante en centavos con signo (positivo = le deben,
+        negativo = debe). Incluye a todos los integrantes (con 0 si no tienen gastos).
+        Calculado con `computeBalances` de `@splitly/core`. Suman 0.
+      responses:
+        "200":
+          description: Saldos.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BalancesResponse" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/groups/{groupId}/expenses:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+    get:
+      tags: [Gastos]
+      operationId: listExpenses
+      summary: Gastos del grupo (Sprint 2)
+      x-sprint: 2
+      description: Del más reciente al más viejo (por `date` y luego `createdAt`), paginado por cursor.
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          description: "`nextCursor` de la página anterior."
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200":
+          description: Página de gastos.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenseListResponse" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [Gastos]
+      operationId: createExpense
+      summary: Crear gasto (Sprint 2)
+      x-sprint: 2
+      description: |
+        La moneda se copia del grupo. El servidor calcula las partes con `@splitly/core`
+        (sobrantes de a 1 centavo por orden ascendente de `memberId`). La respuesta trae
+        los saldos de antes y de después (para la animación de confeti del FE).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateExpenseRequest" }
+      responses:
+        "201":
+          description: Gasto creado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenseMutationResponse" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/groups/{groupId}/expenses/{expenseId}:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+      - $ref: "#/components/parameters/ExpenseId"
+    patch:
+      tags: [Gastos]
+      operationId: updateExpense
+      summary: Editar gasto (Sprint 2)
+      x-sprint: 2
+      description: |
+        Campos opcionales. `amountCents`, `splitType` y `splits` van juntos: la división
+        se recalcula entera. Cualquier integrante puede editar.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateExpenseRequest" }
+      responses:
+        "200":
+          description: Gasto actualizado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenseMutationResponse" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [Gastos]
+      operationId: deleteExpense
+      summary: Borrar gasto (Sprint 2)
+      x-sprint: 2
+      description: Cualquier integrante puede borrar. Devuelve 200 (no 204) para mandar los saldos.
+      responses:
+        "200":
+          description: Gasto borrado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenseDeleteResponse" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: authjs.session-token
+      description: |
+        Cookie de sesión de Auth.js (HttpOnly, SameSite=Lax). En HTTPS se llama
+        `__Secure-authjs.session-token`. El valor es un token opaco; la sesión vive en la tabla `Session`.
+
+  parameters:
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/Id" }
+    MemberId:
+      name: memberId
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/Id" }
+    ExpenseId:
+      name: expenseId
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/Id" }
+
+  responses:
+    ValidationError:
+      description: "Entrada inválida (`VALIDATION_ERROR`, con `details.fieldErrors`)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Invalid request body
+              details:
+                fieldErrors:
+                  name: ["String must contain at least 1 character(s)"]
+    Unauthenticated:
+      description: "Sin sesión (`UNAUTHENTICATED`)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error: { code: UNAUTHENTICATED, message: Authentication required }
+    NotFound:
+      description: "No existe, o no sos integrante del grupo (`NOT_FOUND`)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error: { code: NOT_FOUND, message: Group not found }
+    RateLimited:
+      description: "Demasiados intentos (`RATE_LIMITED`)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Id:
+      type: string
+      minLength: 1
+      maxLength: 64
+      description: ID opaco (cuid).
+      examples: ["cm2u7k1qz0000abcd1234efgh"]
+    Currency:
+      type: string
+      enum: [ARS, USD]
+      default: ARS
+    SplitType:
+      type: string
+      enum: [EQUAL, EXACT, PERCENTAGE]
+      description: |
+        - `EQUAL`: partes iguales entre los integrantes elegidos.
+        - `EXACT`: montos exactos que suman el total.
+        - `PERCENTAGE`: puntos básicos que suman 10000.
+    Cents:
+      type: integer
+      description: Monto en centavos enteros.
+      minimum: 0
+      maximum: 2147483647
+    PositiveCents:
+      type: integer
+      description: Monto en centavos enteros, mayor a 0 (tope = Int de Postgres).
+      minimum: 1
+      maximum: 2147483647
+    SignedCents:
+      type: integer
+      description: Centavos con signo. Positivo = le deben; negativo = debe.
+    BasisPoints:
+      type: integer
+      minimum: 0
+      maximum: 10000
+      description: Puntos básicos (10000 = 100 %).
+    DateOnly:
+      type: string
+      format: date
+      examples: ["2026-10-17"]
+    Timestamp:
+      type: string
+      format: date-time
+
+    ErrorCode:
+      type: string
+      enum: [VALIDATION_ERROR, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, CONFLICT, RATE_LIMITED, INTERNAL]
+    ErrorReason:
+      type: string
+      enum:
+        - EMAIL_TAKEN
+        - MEMBER_DUPLICATE
+        - CURRENCY_LOCKED
+        - MEMBER_HAS_BALANCE
+        - MEMBER_HAS_EXPENSES
+        - MEMBER_LINKED_TO_USER
+    Error:
+      type: object
+      required: [error]
+      additionalProperties: false
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          additionalProperties: false
+          properties:
+            code: { $ref: "#/components/schemas/ErrorCode" }
+            message:
+              type: string
+              description: Solo para logs/debug. No mostrar en la UI.
+            details:
+              type: object
+              properties:
+                reason: { $ref: "#/components/schemas/ErrorReason" }
+                fieldErrors:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items: { type: string }
+
+    User:
+      type: object
+      required: [id, email, name, createdAt]
+      additionalProperties: false
+      properties:
+        id: { $ref: "#/components/schemas/Id" }
+        email: { type: string, format: email, description: Siempre en minúsculas. }
+        name: { type: string }
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+    UserResponse:
+      type: object
+      required: [user]
+      additionalProperties: false
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+    AuthSession:
+      type: object
+      required: [user, expires]
+      properties:
+        user:
+          type: object
+          required: [id, email, name]
+          properties:
+            id: { $ref: "#/components/schemas/Id" }
+            email: { type: string, format: email }
+            name: { type: string }
+        expires: { $ref: "#/components/schemas/Timestamp" }
+    RegisterRequest:
+      type: object
+      required: [email, password, name]
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email, maxLength: 254, description: Se normaliza a minúsculas. }
+        password: { type: string, minLength: 8, maxLength: 128 }
+        name: { type: string, minLength: 1, maxLength: 50 }
+
+    Member:
+      type: object
+      required: [id, groupId, name, userId, createdAt, updatedAt]
+      additionalProperties: false
+      properties:
+        id: { $ref: "#/components/schemas/Id" }
+        groupId: { $ref: "#/components/schemas/Id" }
+        name: { type: string }
+        userId:
+          description: "`null` = invitado sin cuenta."
+          oneOf:
+            - $ref: "#/components/schemas/Id"
+            - type: "null"
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+        updatedAt: { $ref: "#/components/schemas/Timestamp" }
+    MemberRequest:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1, maxLength: 50, description: Se recorta; único por grupo. }
+    MemberResponse:
+      type: object
+      required: [member]
+      additionalProperties: false
+      properties:
+        member: { $ref: "#/components/schemas/Member" }
+    MemberListResponse:
+      type: object
+      required: [members]
+      additionalProperties: false
+      properties:
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/Member" }
+
+    Balance:
+      type: object
+      required: [memberId, balanceCents]
+      additionalProperties: false
+      properties:
+        memberId: { $ref: "#/components/schemas/Id" }
+        balanceCents: { $ref: "#/components/schemas/SignedCents" }
+    BalancesResponse:
+      type: object
+      required: [groupId, currency, balances]
+      additionalProperties: false
+      properties:
+        groupId: { $ref: "#/components/schemas/Id" }
+        currency: { $ref: "#/components/schemas/Currency" }
+        balances:
+          type: array
+          items: { $ref: "#/components/schemas/Balance" }
+
+    GroupSummary:
+      type: object
+      required: [id, name, currency, createdById, memberCount, hasExpenses, myMemberId, myBalanceCents, createdAt, updatedAt]
+      additionalProperties: false
+      properties:
+        id: { $ref: "#/components/schemas/Id" }
+        name: { type: string }
+        currency: { $ref: "#/components/schemas/Currency" }
+        createdById: { $ref: "#/components/schemas/Id" }
+        memberCount: { type: integer, minimum: 1 }
+        hasExpenses:
+          type: boolean
+          description: Si es `true`, la moneda queda bloqueada.
+        myMemberId:
+          $ref: "#/components/schemas/Id"
+          description: Tu integrante en este grupo.
+        myBalanceCents: { $ref: "#/components/schemas/SignedCents" }
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+        updatedAt: { $ref: "#/components/schemas/Timestamp" }
+    GroupDetail:
+      type: object
+      required: [id, name, currency, createdById, memberCount, hasExpenses, myMemberId, myBalanceCents, createdAt, updatedAt, members, balances]
+      additionalProperties: false
+      properties:
+        id: { $ref: "#/components/schemas/Id" }
+        name: { type: string }
+        currency: { $ref: "#/components/schemas/Currency" }
+        createdById: { $ref: "#/components/schemas/Id" }
+        memberCount: { type: integer, minimum: 1 }
+        hasExpenses: { type: boolean }
+        myMemberId: { $ref: "#/components/schemas/Id" }
+        myBalanceCents: { $ref: "#/components/schemas/SignedCents" }
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+        updatedAt: { $ref: "#/components/schemas/Timestamp" }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/Member" }
+        balances:
+          type: array
+          items: { $ref: "#/components/schemas/Balance" }
+    GroupListResponse:
+      type: object
+      required: [groups]
+      additionalProperties: false
+      properties:
+        groups:
+          type: array
+          items: { $ref: "#/components/schemas/GroupSummary" }
+    GroupDetailResponse:
+      type: object
+      required: [group]
+      additionalProperties: false
+      properties:
+        group: { $ref: "#/components/schemas/GroupDetail" }
+    CreateGroupRequest:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        currency: { $ref: "#/components/schemas/Currency" }
+    UpdateGroupRequest:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        currency:
+          $ref: "#/components/schemas/Currency"
+          description: Solo si el grupo no tiene gastos (si no, 409 CURRENCY_LOCKED).
+
+    ExpenseSplit:
+      type: object
+      required: [memberId, amountCents, basisPoints]
+      additionalProperties: false
+      properties:
+        memberId: { $ref: "#/components/schemas/Id" }
+        amountCents: { $ref: "#/components/schemas/Cents" }
+        basisPoints:
+          description: Solo en gastos `PERCENTAGE`; si no, `null`.
+          oneOf:
+            - $ref: "#/components/schemas/BasisPoints"
+            - type: "null"
+    Expense:
+      type: object
+      required: [id, groupId, description, amountCents, currency, paidByMemberId, splitType, date, createdById, createdAt, updatedAt, splits]
+      additionalProperties: false
+      properties:
+        id: { $ref: "#/components/schemas/Id" }
+        groupId: { $ref: "#/components/schemas/Id" }
+        description: { type: string }
+        amountCents: { $ref: "#/components/schemas/PositiveCents" }
+        currency: { $ref: "#/components/schemas/Currency" }
+        paidByMemberId: { $ref: "#/components/schemas/Id" }
+        splitType: { $ref: "#/components/schemas/SplitType" }
+        date: { $ref: "#/components/schemas/DateOnly" }
+        createdById: { $ref: "#/components/schemas/Id" }
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+        updatedAt: { $ref: "#/components/schemas/Timestamp" }
+        splits:
+          type: array
+          description: Ordenadas por `memberId` ascendente. Suman `amountCents`.
+          items: { $ref: "#/components/schemas/ExpenseSplit" }
+    SplitInput:
+      description: Monto, tipo de división y partes (van siempre juntos).
+      oneOf:
+        - type: object
+          required: [splitType, amountCents, splits]
+          properties:
+            splitType: { const: EQUAL }
+            amountCents: { $ref: "#/components/schemas/PositiveCents" }
+            splits:
+              type: array
+              minItems: 1
+              maxItems: 50
+              items:
+                type: object
+                required: [memberId]
+                additionalProperties: false
+                properties:
+                  memberId: { $ref: "#/components/schemas/Id" }
+        - type: object
+          required: [splitType, amountCents, splits]
+          description: Las partes deben sumar exactamente `amountCents`.
+          properties:
+            splitType: { const: EXACT }
+            amountCents: { $ref: "#/components/schemas/PositiveCents" }
+            splits:
+              type: array
+              minItems: 1
+              maxItems: 50
+              items:
+                type: object
+                required: [memberId, amountCents]
+                additionalProperties: false
+                properties:
+                  memberId: { $ref: "#/components/schemas/Id" }
+                  amountCents: { $ref: "#/components/schemas/Cents" }
+        - type: object
+          required: [splitType, amountCents, splits]
+          description: "`basisPoints` debe sumar 10000 y al menos uno ser mayor a 0."
+          properties:
+            splitType: { const: PERCENTAGE }
+            amountCents: { $ref: "#/components/schemas/PositiveCents" }
+            splits:
+              type: array
+              minItems: 1
+              maxItems: 50
+              items:
+                type: object
+                required: [memberId, basisPoints]
+                additionalProperties: false
+                properties:
+                  memberId: { $ref: "#/components/schemas/Id" }
+                  basisPoints: { $ref: "#/components/schemas/BasisPoints" }
+    CreateExpenseRequest:
+      allOf:
+        - type: object
+          required: [description, paidByMemberId, date]
+          properties:
+            description: { type: string, minLength: 1, maxLength: 100 }
+            paidByMemberId: { $ref: "#/components/schemas/Id" }
+            date: { $ref: "#/components/schemas/DateOnly" }
+        - $ref: "#/components/schemas/SplitInput"
+    UpdateExpenseRequest:
+      type: object
+      minProperties: 1
+      description: "`amountCents`, `splitType` y `splits` van juntos (ver `SplitInput`)."
+      dependentRequired:
+        amountCents: [splitType, splits]
+        splitType: [amountCents, splits]
+        splits: [amountCents, splitType]
+      properties:
+        description: { type: string, minLength: 1, maxLength: 100 }
+        paidByMemberId: { $ref: "#/components/schemas/Id" }
+        date: { $ref: "#/components/schemas/DateOnly" }
+        amountCents: { $ref: "#/components/schemas/PositiveCents" }
+        splitType: { $ref: "#/components/schemas/SplitType" }
+        splits:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: object
+            required: [memberId]
+            properties:
+              memberId: { $ref: "#/components/schemas/Id" }
+              amountCents: { $ref: "#/components/schemas/Cents" }
+              basisPoints: { $ref: "#/components/schemas/BasisPoints" }
+    ExpenseListResponse:
+      type: object
+      required: [expenses, nextCursor]
+      additionalProperties: false
+      properties:
+        expenses:
+          type: array
+          items: { $ref: "#/components/schemas/Expense" }
+        nextCursor:
+          oneOf:
+            - type: string
+            - type: "null"
+    BalanceSnapshot:
+      type: array
+      description: Saldos de todos los integrantes del grupo en un momento dado.
+      items: { $ref: "#/components/schemas/Balance" }
+    ExpenseMutationResponse:
+      type: object
+      required: [expense, balancesBefore, balancesAfter]
+      additionalProperties: false
+      properties:
+        expense: { $ref: "#/components/schemas/Expense" }
+        balancesBefore: { $ref: "#/components/schemas/BalanceSnapshot" }
+        balancesAfter: { $ref: "#/components/schemas/BalanceSnapshot" }
+    ExpenseDeleteResponse:
+      type: object
+      required: [deletedExpenseId, balancesBefore, balancesAfter]
+      additionalProperties: false
+      properties:
+        deletedExpenseId: { $ref: "#/components/schemas/Id" }
+        balancesBefore: { $ref: "#/components/schemas/BalanceSnapshot" }
+        balancesAfter: { $ref: "#/components/schemas/BalanceSnapshot" }
