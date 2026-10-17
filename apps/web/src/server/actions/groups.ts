@@ -26,8 +26,9 @@ export async function createGroup(
 }
 
 /**
- * Lista los grupos donde sos integrante, del más reciente al más viejo,
- * con tu saldo en cada uno (myBalanceCents).
+ * Lista los grupos donde sos integrante ACTIVO, del más reciente al más viejo,
+ * con tu saldo en cada uno (myBalanceCents). Los grupos de los que te quitaron
+ * (removedAt) no aparecen.
  *
  * Errores posibles:
  * - UNAUTHENTICATED: no hay sesión.
@@ -44,7 +45,8 @@ export async function listMyGroups(): Promise<ActionResult<GroupSummaryDTO[], "U
  * - UNAUTHENTICATED: no hay sesión.
  * - VALIDATION_ERROR: groupId vacío.
  * - NOT_FOUND: el grupo no existe o no sos integrante (mismo error a propósito,
- *   para no revelar que el grupo existe).
+ *   para no revelar que el grupo existe). Si te quitaron del grupo (removedAt),
+ *   también NOT_FOUND.
  * - INTERNAL
  */
 export async function getGroup(

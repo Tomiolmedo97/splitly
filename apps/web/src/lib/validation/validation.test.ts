@@ -79,13 +79,17 @@ describe("gastos (Sprint 2)", () => {
     ).toBe(false);
   });
 
-  it("monto: entero positivo dentro del rango de Int", () => {
+  it("monto: entero positivo hasta MAX_EXPENSE_CENTS, con fieldError en amountCents", () => {
     const mk = (amountCents: number) =>
       CreateExpenseBodySchema.safeParse({ ...base, splitType: "EQUAL", amountCents, splits: [{ memberId: "m1" }] }).success;
     expect(mk(1)).toBe(true);
     expect(mk(0)).toBe(false);
     expect(mk(10.5)).toBe(false);
-    expect(mk(2_147_483_648)).toBe(false);
+    expect(mk(2_147_483_648)).toBe(true);
+    expect(mk(99_999_999_999)).toBe(true);
+    expect(mk(100_000_000_000)).toBe(false);
+    const r = CreateExpenseBodySchema.safeParse({ ...base, splitType: "EQUAL", amountCents: 100_000_000_000, splits: [{ memberId: "m1" }] });
+    expect(r.success ? {} : r.error.flatten().fieldErrors).toHaveProperty("amountCents");
   });
 
   it("PATCH: amountCents, splitType y splits van juntos", () => {

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { CurrencySchema, LIMITS, requiredText } from "./common";
 
-/** POST /api/groups. Quien crea el grupo queda como su primer integrante. */
+/** Alta de grupo. Quien lo crea queda como su primer integrante. */
 export const CreateGroupBodySchema = z
   .object({
     name: requiredText(LIMITS.groupName),
@@ -11,7 +11,7 @@ export const CreateGroupBodySchema = z
 export type CreateGroupBody = z.infer<typeof CreateGroupBodySchema>;
 
 /**
- * PATCH /api/groups/{groupId}. Al menos un campo.
+ * Edición de grupo. Al menos un campo.
  * La moneda solo cambia si el grupo no tiene gastos activos (si no, CURRENCY_LOCKED):
  * esa regla la aplica el servicio, no este esquema.
  */

@@ -48,9 +48,10 @@ pnpm --filter @splitly/web db:seed       # datos de ejemplo: SOLO local o VERCEL
 - `DATABASE_URL`: conexión con pooler (la usa la app). `DIRECT_URL`: conexión directa (migraciones).
 - Para una migración nueva: editar el schema y correr
   `pnpm --filter @splitly/web exec prisma migrate dev --name <nombre>` contra una base local o un branch de Neon.
+- Plata: `BigInt` en la base (tope por gasto 99.999.999.999 centavos, con CHECK). `src/lib/cents.ts` convierte a `number` en el borde: el resto de la app nunca ve `bigint`.
 - Bajas lógicas: los integrantes quitados quedan con `Member.removedAt` y los gastos borrados con `Expense.deletedAt`.
   **Los balances siempre ignoran los gastos con `deletedAt`**. Borrar un grupo sí es físico (primero sus gastos, después el grupo, en una transacción).
-- El nombre de un invitado es único por grupo solo entre invitados activos (índice parcial escrito a mano en la migración inicial).
+- El nombre de un invitado es único por grupo solo entre invitados activos, sin distinguir mayúsculas ni espacios en los extremos (índice parcial escrito a mano en la migración inicial). Pagador y partes de un gasto tienen que ser del mismo grupo (FK compuestas).
 - Usuarios del seed: `tomas@example.com` / `lucia@example.com`, contraseña `splitly-demo-123`.
 
 Requiere Node >= 20 y pnpm 9.

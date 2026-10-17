@@ -5,8 +5,13 @@ import { z } from "zod";
  * Son la fuente de verdad de los límites de cada campo.
  */
 
-/** Máximo de un Int de Postgres: es el tope de cualquier monto en centavos. */
-export const MAX_CENTS = 2_147_483_647;
+/**
+ * Tope por gasto: 99.999.999.999 centavos ($ 999.999.999,99). Coincide con el CHECK
+ * de la base. Es un entero seguro en JS (< 2^53) y monto × 10000 bps también lo es,
+ * así que @splitly/core puede operar con `number` sin perder precisión.
+ */
+export const MAX_EXPENSE_CENTS = 99_999_999_999;
+const MAX_CENTS_MESSAGE = "El monto máximo por gasto es $ 999.999.999,99";
 
 export const LIMITS = {
   userName: 50,
@@ -33,10 +38,18 @@ export const IdSchema = z.string().min(1).max(64);
 export const requiredText = (max: number) => z.string().trim().min(1).max(max);
 
 /** Centavos enteros positivos (> 0). */
-export const PositiveCentsSchema = z.number().int().positive().max(MAX_CENTS);
+export const PositiveCentsSchema = z
+  .number()
+  .int("El monto tiene que ser un número entero de centavos")
+  .positive("El monto tiene que ser mayor a 0")
+  .max(MAX_EXPENSE_CENTS, MAX_CENTS_MESSAGE);
 
 /** Centavos enteros no negativos (>= 0). */
-export const NonNegativeCentsSchema = z.number().int().nonnegative().max(MAX_CENTS);
+export const NonNegativeCentsSchema = z
+  .number()
+  .int("El monto tiene que ser un número entero de centavos")
+  .nonnegative("El monto no puede ser negativo")
+  .max(MAX_EXPENSE_CENTS, MAX_CENTS_MESSAGE);
 
 /** Puntos básicos: 10000 = 100 %. */
 export const BasisPointsSchema = z.number().int().min(0).max(10_000);

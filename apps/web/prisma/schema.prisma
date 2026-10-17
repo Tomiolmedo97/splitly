@@ -1,8 +1,10 @@
 // Esquema de datos de Splitly (Sprint 1).
 //
 // Convenciones:
-// - La plata SIEMPRE se guarda como centavos enteros (Int). Int de Postgres llega
-//   hasta 2.147.483.647 centavos (~ $21,4 millones por gasto), suficiente para el MVP.
+// - La plata SIEMPRE se guarda como centavos enteros en BigInt (bigint de Postgres).
+//   Tope por gasto: 99.999.999.999 centavos (999.999.999,99), con CHECK en la base y
+//   MAX_EXPENSE_CENTS en Zod. La capa de datos convierte bigint <-> number en el borde
+//   (src/lib/cents.ts): @splitly/core, los DTOs y el cliente solo ven `number`.
 // - Los porcentajes se guardan en puntos básicos (10000 = 100 %).
 // - Los IDs son cuid (strings), igual que espera @auth/prisma-adapter.
 // - Las reglas que Prisma no puede expresar (CHECKs, moneda bloqueada con gastos)
@@ -140,12 +142,15 @@ model Member {
   expensesPaid Expense[]      @relation("ExpensePaidBy")
   splits       ExpenseSplit[]
 
+  // Destino de las FK compuestas (memberId, groupId) de Expense y ExpenseSplit:
+  // garantiza en la base que el pagador y las partes son del MISMO grupo del gasto.
+  @@unique([id, groupId])
   // Unicidad con índices únicos PARCIALES (Prisma no los modela; están como SQL a
   // mano al final de la migración inicial):
-  // - "Member_groupId_name_guest_key": (groupId, lower(name))
+  // - "Member_groupId_name_guest_key": (groupId, lower(trim(name)))
   //     WHERE userId IS NULL AND removedAt IS NULL
-  //   → nombre único entre invitados activos, sin distinguir mayúsculas
-  //     (el nombre se guarda recortado con trim antes de comparar).
+  //   → nombre único entre invitados activos, sin distinguir mayúsculas ni
+  //     espacios en los extremos (además el servicio guarda el nombre recortado).
   // - "Member_groupId_userId_key": (groupId, userId)
   //     WHERE userId IS NOT NULL AND removedAt IS NULL
   //   → una persona con cuenta aparece una sola vez (activa) por grupo. Si se la
@@ -160,8 +165,8 @@ model Expense {
   id             String    @id @default(cuid())
   groupId        String
   description    String
-  // Centavos enteros, siempre > 0 (CHECK en la migración).
-  amountCents    Int
+  // Centavos enteros, entre 1 y 99.999.999.999 (CHECK en la migración).
+  amountCents    BigInt
   // Copiada de la moneda del grupo al crear el gasto.
   currency       Currency
   paidByMemberId String
@@ -179,14 +184,17 @@ model Expense {
   // Restrict: la base nunca borra gastos (plata) por borrar un integrante (los
   // integrantes se dan de baja con removedAt). Borrar un GRUPO sí es físico: el
   // servicio borra primero sus gastos y después el grupo, en una transacción (ver seed).
-  paidBy    Member         @relation("ExpensePaidBy", fields: [paidByMemberId], references: [id], onDelete: Restrict)
+  // FK compuesta: el pagador tiene que ser integrante del mismo grupo del gasto.
+  paidBy    Member         @relation("ExpensePaidBy", fields: [paidByMemberId, groupId], references: [id, groupId], onDelete: Restrict)
   createdBy User           @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   splits    ExpenseSplit[]
 
+  // Destino de la FK compuesta (expenseId, groupId) de ExpenseSplit.
+  @@unique([id, groupId])
   @@index([groupId, date])
   // Para calcular balances: WHERE groupId = ? AND deletedAt IS NULL.
   @@index([groupId, deletedAt])
-  @@index([paidByMemberId])
+  @@index([paidByMemberId, groupId])
   @@index([createdById])
 }
 
@@ -195,14 +203,17 @@ model Expense {
 model ExpenseSplit {
   expenseId   String
   memberId    String
-  // Centavos enteros, >= 0 (un integrante con 0 bps puede quedar en 0).
-  amountCents Int
+  // Grupo del gasto (redundante a propósito): permite las FK compuestas que
+  // aseguran que el gasto y el integrante pertenecen al mismo grupo.
+  groupId     String
+  // Centavos enteros, entre 0 y 99.999.999.999 (un integrante con 0 bps queda en 0).
+  amountCents BigInt
   // Solo para splitType = PERCENTAGE: puntos básicos entre 0 y 10000.
   basisPoints Int?
 
-  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  member  Member  @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  expense Expense @relation(fields: [expenseId, groupId], references: [id, groupId], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId, groupId], references: [id, groupId], onDelete: Restrict)
 
   @@id([expenseId, memberId])
-  @@index([memberId])
+  @@index([memberId, groupId])
 }

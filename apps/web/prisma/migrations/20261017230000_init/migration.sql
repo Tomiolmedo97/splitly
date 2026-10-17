@@ -88,7 +88,7 @@ CREATE TABLE "Expense" (
     "id" TEXT NOT NULL,
     "groupId" TEXT NOT NULL,
     "description" TEXT NOT NULL,
-    "amountCents" INTEGER NOT NULL,
+    "amountCents" BIGINT NOT NULL,
     "currency" "Currency" NOT NULL,
     "paidByMemberId" TEXT NOT NULL,
     "splitType" "SplitType" NOT NULL,
@@ -105,7 +105,8 @@ CREATE TABLE "Expense" (
 CREATE TABLE "ExpenseSplit" (
     "expenseId" TEXT NOT NULL,
     "memberId" TEXT NOT NULL,
-    "amountCents" INTEGER NOT NULL,
+    "groupId" TEXT NOT NULL,
+    "amountCents" BIGINT NOT NULL,
     "basisPoints" INTEGER,
 
     CONSTRAINT "ExpenseSplit_pkey" PRIMARY KEY ("expenseId","memberId")
@@ -133,19 +134,25 @@ CREATE INDEX "Member_groupId_idx" ON "Member"("groupId");
 CREATE INDEX "Member_userId_idx" ON "Member"("userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Member_id_groupId_key" ON "Member"("id", "groupId");
+
+-- CreateIndex
 CREATE INDEX "Expense_groupId_date_idx" ON "Expense"("groupId", "date");
 
 -- CreateIndex
 CREATE INDEX "Expense_groupId_deletedAt_idx" ON "Expense"("groupId", "deletedAt");
 
 -- CreateIndex
-CREATE INDEX "Expense_paidByMemberId_idx" ON "Expense"("paidByMemberId");
+CREATE INDEX "Expense_paidByMemberId_groupId_idx" ON "Expense"("paidByMemberId", "groupId");
 
 -- CreateIndex
 CREATE INDEX "Expense_createdById_idx" ON "Expense"("createdById");
 
 -- CreateIndex
-CREATE INDEX "ExpenseSplit_memberId_idx" ON "ExpenseSplit"("memberId");
+CREATE UNIQUE INDEX "Expense_id_groupId_key" ON "Expense"("id", "groupId");
+
+-- CreateIndex
+CREATE INDEX "ExpenseSplit_memberId_groupId_idx" ON "ExpenseSplit"("memberId", "groupId");
 
 -- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -166,16 +173,16 @@ ALTER TABLE "Member" ADD CONSTRAINT "Member_userId_fkey" FOREIGN KEY ("userId") 
 ALTER TABLE "Expense" ADD CONSTRAINT "Expense_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Expense" ADD CONSTRAINT "Expense_paidByMemberId_fkey" FOREIGN KEY ("paidByMemberId") REFERENCES "Member"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Expense" ADD CONSTRAINT "Expense_paidByMemberId_groupId_fkey" FOREIGN KEY ("paidByMemberId", "groupId") REFERENCES "Member"("id", "groupId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Expense" ADD CONSTRAINT "Expense_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_expenseId_fkey" FOREIGN KEY ("expenseId") REFERENCES "Expense"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_expenseId_groupId_fkey" FOREIGN KEY ("expenseId", "groupId") REFERENCES "Expense"("id", "groupId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_memberId_fkey" FOREIGN KEY ("memberId") REFERENCES "Member"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_memberId_groupId_fkey" FOREIGN KEY ("memberId", "groupId") REFERENCES "Member"("id", "groupId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- ---------------------------------------------------------------------------
 -- Agregado a mano: Prisma no modela CHECK constraints ni índices parciales.
@@ -185,18 +192,19 @@ ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_memberId_fkey" FOREIGN K
 -- Los emails se guardan siempre en minúsculas.
 ALTER TABLE "User" ADD CONSTRAINT "User_email_lowercase_check" CHECK ("email" = lower("email"));
 
--- Montos en centavos enteros: el total del gasto siempre es positivo.
-ALTER TABLE "Expense" ADD CONSTRAINT "Expense_amountCents_positive_check" CHECK ("amountCents" > 0);
+-- Montos en centavos enteros (bigint): el total del gasto va de 1 a 99.999.999.999
+-- (999.999.999,99). Mismo tope que MAX_EXPENSE_CENTS en Zod.
+ALTER TABLE "Expense" ADD CONSTRAINT "Expense_amountCents_range_check" CHECK ("amountCents" > 0 AND "amountCents" <= 99999999999);
 
--- La parte de cada integrante no puede ser negativa (puede ser 0 con 0 bps).
-ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_amountCents_nonnegative_check" CHECK ("amountCents" >= 0);
+-- La parte de cada integrante va de 0 (con 0 bps) al tope por gasto.
+ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_amountCents_range_check" CHECK ("amountCents" >= 0 AND "amountCents" <= 99999999999);
 
 -- Puntos básicos entre 0 y 10000 (100 %), o nulo si el gasto no es por porcentaje.
 ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_basisPoints_range_check" CHECK ("basisPoints" IS NULL OR ("basisPoints" >= 0 AND "basisPoints" <= 10000));
 
--- Nombre único por grupo SOLO entre invitados activos, sin distinguir mayúsculas.
--- El servicio guarda el nombre recortado (trim) antes de comparar.
-CREATE UNIQUE INDEX "Member_groupId_name_guest_key" ON "Member"("groupId", lower("name")) WHERE "userId" IS NULL AND "removedAt" IS NULL;
+-- Nombre único por grupo SOLO entre invitados activos, sin distinguir mayúsculas ni
+-- espacios en los extremos (el servicio además guarda el nombre recortado).
+CREATE UNIQUE INDEX "Member_groupId_name_guest_key" ON "Member"("groupId", lower(btrim("name"))) WHERE "userId" IS NULL AND "removedAt" IS NULL;
 
 -- Una persona con cuenta aparece una sola vez (activa) por grupo.
 CREATE UNIQUE INDEX "Member_groupId_userId_key" ON "Member"("groupId", "userId") WHERE "userId" IS NOT NULL AND "removedAt" IS NULL;

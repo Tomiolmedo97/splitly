@@ -13,6 +13,7 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { splitEqual, splitPercent } from "@splitly/core";
+import { toDbCents } from "../src/lib/cents";
 import { hashPassword } from "../src/lib/password";
 
 const DEMO_PASSWORD = "splitly-demo-123";
@@ -83,13 +84,15 @@ async function main() {
       data: {
         groupId: "seed_group_bariloche",
         description: "Cabaña (3 noches)",
-        amountCents: 10_000_000,
+        amountCents: toDbCents(10_000_000),
         currency: "ARS",
         paidByMemberId: "seed_member_a_tomas",
         splitType: "EQUAL",
         date: new Date("2026-10-10T00:00:00Z"),
         createdById: tomas.id,
-        splits: { create: cabin.map((s) => ({ memberId: s.memberId, amountCents: s.amountCents })) },
+        splits: {
+          create: cabin.map((s) => ({ memberId: s.memberId, amountCents: toDbCents(s.amountCents) })),
+        },
       },
     });
 
@@ -104,7 +107,7 @@ async function main() {
       data: {
         groupId: "seed_group_bariloche",
         description: "Cena en el centro",
-        amountCents: 4_500_000,
+        amountCents: toDbCents(4_500_000),
         currency: "ARS",
         paidByMemberId: "seed_member_b_lucia",
         splitType: "PERCENTAGE",
@@ -113,7 +116,7 @@ async function main() {
         splits: {
           create: dinner.map((s) => ({
             memberId: s.memberId,
-            amountCents: s.amountCents,
+            amountCents: toDbCents(s.amountCents),
             basisPoints: shares.find((x) => x.memberId === s.memberId)!.bps,
           })),
         },

@@ -50,7 +50,9 @@ export async function addMember(_input: AddMemberInput): Promise<ActionResult<Me
  * - UNAUTHENTICATED, VALIDATION_ERROR.
  * - NOT_FOUND: el grupo o el integrante no existen, el integrante es de otro grupo,
  *   o no sos integrante del grupo.
- * - MEMBER_DUPLICATE: el nombre nuevo ya lo usa otro integrante del grupo.
+ * - MEMBER_DUPLICATE: solo si el integrante es invitado y el nombre nuevo ya lo usa
+ *   otro invitado activo del grupo (sin distinguir mayúsculas ni espacios en los
+ *   extremos). Los integrantes con cuenta son únicos por userId, no por nombre.
  * - INTERNAL
  */
 export async function updateMember(

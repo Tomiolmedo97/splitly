@@ -6,7 +6,7 @@ export const EmailSchema = z.string().trim().toLowerCase().email().max(LIMITS.em
 
 export const PasswordSchema = z.string().min(LIMITS.passwordMin).max(LIMITS.passwordMax);
 
-/** POST /api/auth/register */
+/** Registro (Server Action `register`). */
 export const RegisterBodySchema = z
   .object({
     email: EmailSchema,

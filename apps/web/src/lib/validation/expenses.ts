@@ -84,7 +84,7 @@ const expenseDetailsShape = {
   date: DateOnlySchema,
 };
 
-/** POST /api/groups/{groupId}/expenses. La moneda se copia del grupo. */
+/** Alta de gasto. La moneda se copia del grupo. */
 export const CreateExpenseBodySchema = z
   .discriminatedUnion("splitType", [
     z.object({ ...expenseDetailsShape, ...EqualSplitShape }).strict(),
@@ -95,7 +95,7 @@ export const CreateExpenseBodySchema = z
 export type CreateExpenseBody = z.infer<typeof CreateExpenseBodySchema>;
 
 /**
- * PATCH /api/groups/{groupId}/expenses/{expenseId}. Todos los campos son opcionales,
+ * Edición de gasto. Todos los campos son opcionales,
  * pero amountCents, splitType y splits van juntos (la división se recalcula entera).
  */
 export const UpdateExpenseBodySchema = z
@@ -133,7 +133,7 @@ export const UpdateExpenseBodySchema = z
   });
 export type UpdateExpenseBody = z.infer<typeof UpdateExpenseBodySchema>;
 
-/** Query de GET /api/groups/{groupId}/expenses (paginado por cursor). */
+/** Paginado por cursor de la lista de gastos. */
 export const ListExpensesQuerySchema = z.object({
   cursor: IdSchema.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
