@@ -27,6 +27,11 @@ test.describe.fixme("US1: registro, ingreso y cierre de sesión", () => {
     const usuario = await registrar(page, nuevoUsuario("Ana Registro"));
 
     await expect(page.getByRole("heading", { level: 1, name: TEXTOS.misGrupos.saludo(usuario.nombre) })).toBeVisible();
+    // Confirmado por FE: entra a /grupos con el estado vacío y la acción para crear el primer grupo.
+    await expect(page.getByText(TEXTOS.misGrupos.vacio)).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: TEXTOS.misGrupos.vacioBoton }).or(page.getByRole("button", { name: TEXTOS.misGrupos.vacioBoton })),
+    ).toBeVisible();
     expect(await tieneSesion(context)).toBe(true);
   });
 
@@ -85,9 +90,8 @@ test.describe.fixme("US1: registro, ingreso y cierre de sesión", () => {
   test("cerrar sesión vuelve al ingreso y borra la cookie de sesión", async ({ page, context }) => {
     await registrar(page);
 
-    // SUPUESTO (FE confirma): "Cerrar sesión" es un botón visible en Mis grupos,
-    // sin menú intermedio. Si va dentro de un menú, se agrega el clic que lo abre.
-    await page.getByRole("button", { name: TEXTOS.general.cerrarSesion }).click();
+    // Confirmado por FE: botón de texto directo en el encabezado de Mis grupos.
+    await page.getByRole("banner").getByRole("button", { name: TEXTOS.general.cerrarSesion }).click();
 
     await expect(page).toHaveURL(rutaIngreso);
     expect(await tieneSesion(context)).toBe(false);

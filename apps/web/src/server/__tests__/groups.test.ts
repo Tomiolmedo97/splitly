@@ -36,17 +36,16 @@ describe("getGroup", () => {
   it.todo("sin sesión devuelve UNAUTHENTICATED");
 });
 
-describe("updateGroup: cambio de moneda", () => {
+describe("updateGroup({ groupId, name?, currency? }): cambio de moneda", () => {
   // CURRENCY_LOCKED cuenta SOLO gastos activos (Expense.deletedAt null).
-  // Textos: no se fijan acá. La ayuda de moneda y el texto de CURRENCY_LOCKED los
-  // define Design en docs/design/textos.md; los tests miran solo error.code.
   it.todo("cambiar la moneda de un grupo sin gastos se permite");
   it.todo("cambiar la moneda con al menos un gasto activo devuelve CURRENCY_LOCKED");
+  it.todo("con el seed: cambiar la moneda de Bariloche (2 gastos activos) devuelve CURRENCY_LOCKED");
   it.todo("con todos los gastos borrados (deletedAt) se puede volver a cambiar la moneda");
   it.todo("borrar el último gasto activo desbloquea el cambio de moneda; cargar uno nuevo lo vuelve a bloquear");
   it.todo("una moneda que no es ARS ni USD devuelve VALIDATION_ERROR");
   it.todo("quien no es miembro recibe NOT_FOUND");
   it.todo("sin sesión devuelve UNAUTHENTICATED");
-  // TODO(copy): cuando Design cierre la clave de copy de CURRENCY_LOCKED y de la
-  // ayuda de moneda, el e2e la toma de TEXTOS (e2e/fixtures.ts), sin texto fijo.
+  // Copy (main): ayuda de moneda y texto de CURRENCY_LOCKED están en textos.md y
+  // en TEXTOS (e2e/fixtures.ts). Acá se mira solo error.code.
 });

@@ -1,10 +1,9 @@
 /**
  * Helpers y fixtures compartidos por los specs e2e del Sprint 1.
  *
- * Las rutas y los textos de labels/botones siguen los wireframes
- * (docs/design/wireframes.md) y las specs de componentes base. Donde el
- * wireframe no define algo (registro, logout, URLs), queda marcado como
- * SUPUESTO para que FE/BE lo confirmen; si cambia, se ajusta solo acá.
+ * Rutas, textos y roles siguen docs/design/textos.md y wireframes.md (main) y
+ * lo confirmado por FE/Design. Lo que todavía no está confirmado queda marcado
+ * como SUPUESTO en el spec que lo usa; si cambia, se ajusta acá o en ese spec.
  */
 import { randomUUID } from "node:crypto";
 import {
@@ -29,15 +28,25 @@ export const RUTAS = {
   grupo: (id: string) => `/grupos/${id}`,
 } as const;
 
-/** Textos de la UI (docs/design/textos.md, #19 @ b63585f). FE muestra el texto según error.code. */
+/**
+ * Textos de la UI, copiados literalmente de docs/design/textos.md (main @ b43b72e):
+ * en main no hay un módulo de copy importable (lib/copy.ts llega con #17; cuando
+ * se mergee, se puede importar de ahí). FE muestra el texto según error.code.
+ */
 export const TEXTOS = {
   ingreso: { titulo: "Ingresá a Splitly", boton: "Ingresar", linkRegistro: "Creá una" },
   registro: { titulo: "Creá tu cuenta", nombre: "Tu nombre", boton: "Crear cuenta" },
-  misGrupos: { saludo: (nombre: string) => `Hola, ${nombre}`, nuevoGrupo: "Nuevo grupo", vacio: "Todavía no tenés grupos" },
+  misGrupos: {
+    saludo: (nombre: string) => `Hola, ${nombre}`,
+    nuevoGrupo: "Nuevo grupo",
+    vacio: "Todavía no tenés grupos",
+    vacioBoton: "Crear mi primer grupo",
+  },
   nuevoGrupo: {
     titulo: "Nuevo grupo",
     nombre: "Nombre del grupo",
     moneda: "Moneda",
+    ayudaMoneda: "Podés cambiarla mientras el grupo no tenga gastos",
     participantes: "Participantes",
     soloNombre: "Agregar solo con nombre",
     deTusGrupos: "Agregar de tus grupos",
@@ -50,14 +59,15 @@ export const TEXTOS = {
     boton: "Crear grupo",
   },
   general: { cerrarSesion: "Cerrar sesión" },
-  // TODO(copy): la ayuda de moneda y el texto de CURRENCY_LOCKED los está ajustando
-  // Design; se agregan acá cuando estén cerrados en textos.md (no se fijan antes).
+  detalle: { saldos: "Saldos", gastos: "Gastos" },
   errores: {
     emailTomado: "Ya hay una cuenta con este email",
     credenciales: "El email o la contraseña no coinciden",
     contrasenaCorta: "La contraseña tiene que tener al menos 8 caracteres",
     nombreGrupoVacio: "Ponele un nombre al grupo",
     nombreDuplicado: "Ya hay alguien con ese nombre",
+    /** CURRENCY_LOCKED. */
+    monedaBloqueada: "Este grupo ya tiene gastos, así que la moneda no se puede cambiar",
     /** MEMBER_DUPLICATE por userId. */
     personaYaAgregada: "Esa persona ya está en el grupo",
     /** NOT_FOUND: también para quien no es miembro (no se filtra si el grupo existe). */
@@ -96,7 +106,7 @@ export function campoContrasena(page: Page) {
 
 /**
  * Registra un usuario por la UI y deja la sesión iniciada.
- * SUPUESTO: al terminar el registro, entra directo a Mis grupos ("Hola, {nombre}").
+ * Confirmado por FE: al terminar el registro entra a /grupos ("Hola, {nombre}").
  */
 export async function registrar(page: Page, usuario: UsuarioDePrueba = nuevoUsuario()) {
   await page.goto(RUTAS.registro);
@@ -104,6 +114,7 @@ export async function registrar(page: Page, usuario: UsuarioDePrueba = nuevoUsua
   await page.getByLabel("Email", { exact: true }).fill(usuario.email);
   await campoContrasena(page).fill(usuario.contrasena);
   await page.getByRole("button", { name: TEXTOS.registro.boton }).click();
+  await expect(page).toHaveURL(new RegExp(`${RUTAS.grupos}(\\?|$)`));
   await expect(page.getByRole("heading", { level: 1, name: TEXTOS.misGrupos.saludo(usuario.nombre) })).toBeVisible();
   return usuario;
 }
@@ -174,15 +185,44 @@ export async function nuevoContexto(
 }
 
 /**
- * Usuario del seed del branch de Neon de e2e (nunca producción, ver docs/qa/e2e.md).
- * SUPUESTO (BE confirma el seed): comparte un grupo activo con "Bruno Seed" y
- * "Caro Seed", y nada más. Se puede sobrescribir con E2E_SEED_EMAIL / E2E_SEED_PASSWORD.
+ * Seed del branch de Neon de e2e/preview (nunca producción, ver docs/qa/e2e.md):
+ * - tomas@example.com y lucia@example.com comparten el grupo "Bariloche", con el
+ *   invitado sin cuenta "Martín" y 2 gastos.
+ * - nora@example.com no comparte ningún grupo (para los casos NOT_FOUND).
+ * La contraseña sale SIEMPRE de E2E_SEED_PASSWORD; nunca se escribe en el repo.
  */
-export const USUARIO_SEMBRADO = {
-  email: process.env.E2E_SEED_EMAIL ?? "ana.seed@example.test",
-  contrasena: process.env.E2E_SEED_PASSWORD ?? CONTRASENA_VALIDA,
-  contactos: ["Bruno Seed", "Caro Seed"],
+export const SEED = {
+  tomas: { email: "tomas@example.com" },
+  lucia: { email: "lucia@example.com" },
+  nora: { email: "nora@example.com" },
+  grupo: { nombre: "Bariloche", invitado: "Martín", gastos: 2 },
 } as const;
+
+/**
+ * SUPUESTO (BE confirma): nombre visible de Lucía en el seed. Se busca sin
+ * depender de mayúsculas ni del acento.
+ */
+export const NOMBRE_LUCIA = /^Luc[ií]a\b/i;
+
+/** Contraseña del seed. Falla con un mensaje claro si falta (no rompe --list: se lee al usarla). */
+export function contrasenaSeed(): string {
+  const valor = process.env.E2E_SEED_PASSWORD;
+  if (!valor) throw new Error("Falta E2E_SEED_PASSWORD (contraseña de los usuarios del seed). Ver docs/qa/e2e.md.");
+  return valor;
+}
+
+/** Ingresa como un usuario del seed y espera Mis grupos. */
+export async function ingresarComoSeed(page: Page, usuario: { email: string }) {
+  await ingresarYEsperarMisGrupos(page, usuario.email, contrasenaSeed());
+}
+
+/** Abre el grupo "Bariloche" desde Mis grupos y devuelve su id. */
+export async function abrirGrupoSeed(page: Page): Promise<string> {
+  await page.goto(RUTAS.grupos);
+  await page.getByRole("link", { name: new RegExp(SEED.grupo.nombre) }).click();
+  await expect(page).toHaveURL(URL_DETALLE_GRUPO);
+  return idDeGrupoDesdeUrl(page.url());
+}
 
 type Fixtures = {
   /** Usuario recién registrado, con la sesión iniciada en `page`. */
