@@ -1,0 +1,192 @@
+// Esquema de datos de Splitly (Sprint 1).
+//
+// Convenciones:
+// - La plata SIEMPRE se guarda como centavos enteros (Int). Int de Postgres llega
+//   hasta 2.147.483.647 centavos (~ $21,4 millones por gasto), suficiente para el MVP.
+// - Los porcentajes se guardan en puntos básicos (10000 = 100 %).
+// - Los IDs son cuid (strings), igual que espera @auth/prisma-adapter.
+// - Las reglas que Prisma no puede expresar (CHECKs, moneda bloqueada con gastos)
+//   están documentadas acá y en docs/api/openapi.yaml.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Conexión con pooling (PgBouncer de Neon) para la app en Vercel.
+  url       = env("DATABASE_URL")
+  // Conexión directa (sin pooler) para migraciones.
+  directUrl = env("DIRECT_URL")
+}
+
+enum Currency {
+  ARS
+  USD
+}
+
+enum SplitType {
+  EQUAL
+  EXACT
+  PERCENTAGE
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios y tablas de Auth.js (@auth/prisma-adapter)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  // Siempre en minúsculas: se normaliza en el servicio y lo refuerza un CHECK en la migración.
+  email         String    @unique
+  // Auth.js lo usa en el flujo de verificación por mail (fuera del MVP, queda nulo).
+  emailVerified DateTime?
+  name          String
+  // Hash de la contraseña (nunca la contraseña en texto plano).
+  passwordHash  String
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  members         Member[]
+  groupsCreated   Group[]   @relation("GroupCreatedBy")
+  expensesCreated Expense[] @relation("ExpenseCreatedBy")
+}
+
+// Requerida por el adapter. En el MVP solo hay credenciales (sin OAuth), así que
+// queda vacía; la dejamos para sumar Google más adelante sin otra migración de Auth.js.
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+}
+
+// Sesiones de base de datos: la cookie solo guarda el sessionToken opaco.
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Dominio
+// ---------------------------------------------------------------------------
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  // Solo se puede cambiar mientras el grupo no tenga gastos (regla de servicio → 409 CONFLICT).
+  currency    Currency @default(ARS)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Restrict: borrar un usuario no debe borrar en cascada los grupos que creó.
+  createdBy User      @relation("GroupCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  members   Member[]
+  expenses  Expense[]
+
+  @@index([createdById])
+}
+
+// Integrante de un grupo. Está separado de User para poder tener invitados
+// (userId nulo) que no tienen cuenta.
+model Member {
+  id        String   @id @default(cuid())
+  groupId   String
+  // Se guarda recortado (trim); la unicidad por grupo distingue mayúsculas.
+  name      String
+  // Nulo = invitado sin cuenta. Si se borra el usuario, el integrante queda como invitado.
+  userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group        Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user         User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  expensesPaid Expense[]      @relation("ExpensePaidBy")
+  splits       ExpenseSplit[]
+
+  @@unique([groupId, name])
+  // En Postgres los NULL son distintos entre sí dentro de un índice único, así que
+  // esto equivale a "único (groupId, userId) cuando userId no es nulo": puede haber
+  // muchos invitados, pero un usuario aparece una sola vez por grupo.
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model Expense {
+  id             String    @id @default(cuid())
+  groupId        String
+  description    String
+  // Centavos enteros, siempre > 0 (CHECK en la migración).
+  amountCents    Int
+  // Copiada de la moneda del grupo al crear el gasto.
+  currency       Currency
+  paidByMemberId String
+  splitType      SplitType
+  // Fecha calendario del gasto (sin hora).
+  date           DateTime  @db.Date
+  createdById    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  group     Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  // Restrict: la base nunca borra gastos (plata) por borrar un integrante.
+  // Por eso, para borrar un grupo el servicio primero borra sus gastos y después el
+  // grupo, en la misma transacción (ver prisma/seed.ts).
+  paidBy    Member         @relation("ExpensePaidBy", fields: [paidByMemberId], references: [id], onDelete: Restrict)
+  createdBy User           @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  splits    ExpenseSplit[]
+
+  @@index([groupId, date])
+  @@index([paidByMemberId])
+  @@index([createdById])
+}
+
+// Parte de cada integrante en un gasto. La suma de amountCents debe ser igual a
+// Expense.amountCents (lo garantiza @splitly/core al calcular la división).
+model ExpenseSplit {
+  expenseId   String
+  memberId    String
+  // Centavos enteros, >= 0 (un integrante con 0 bps puede quedar en 0).
+  amountCents Int
+  // Solo para splitType = PERCENTAGE: puntos básicos entre 0 y 10000.
+  basisPoints Int?
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([expenseId, memberId])
+  @@index([memberId])
+}
