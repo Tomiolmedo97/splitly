@@ -50,6 +50,19 @@ export const copy = {
   newGroup: {
     currencyHelp: "Podés cambiarla mientras el grupo no tenga gastos",
   },
+  balance: {
+    /** Label por defecto de la tarjeta de saldo (no figura en textos.md). */
+    label: "Tu saldo",
+    positive: "Te deben",
+    negative: "Debés",
+    settled: "Al día",
+  },
+  member: {
+    /** En minúscula a propósito (textos.md la escribe "Sin cuenta"). */
+    withoutAccount: "sin cuenta",
+    /** Estado del saldo para lectores de pantalla en la fila de persona. */
+    srStatus: { positive: "le deben", negative: "debe", settled: "está al día" },
+  },
   general: {
     loading: "Cargando",
     retry: "Probar de nuevo",

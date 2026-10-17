@@ -10,9 +10,10 @@ describe("formatMoney", () => {
     expect(show(formatMoney(123456789, "USD"))).toBe("US$␣1.234.567,89");
   });
 
-  it("signo con espacio duro y menos tipográfico (U+2212)", () => {
-    expect(show(formatMoney(450000, "USD", { showPlus: true }))).toBe("+␣US$␣4.500,00");
-    expect(show(formatMoney(-150000, "ARS"))).toBe("−␣$␣1.500,00");
+  it("signo pegado a la moneda, espacio duro solo antes del número y menos tipográfico (U+2212)", () => {
+    expect(show(formatMoney(450000, "USD", { showPlus: true }))).toBe("+US$␣4.500,00");
+    expect(show(formatMoney(-150000, "ARS"))).toBe("−$␣1.500,00");
+    expect(show(formatMoney(99999999999, "USD", { showPlus: true }))).toBe("+US$␣999.999.999,99");
     expect(formatMoney(-1, "USD").startsWith("\u2212")).toBe(true);
   });
 

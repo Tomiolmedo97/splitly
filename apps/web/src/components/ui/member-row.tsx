@@ -5,7 +5,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, ArrowUp, Check } from "lucide-react";
 import { formatMoney, type Currency } from "@/lib/format-money";
 import { cn } from "@/lib/cn";
-import { balanceStatus } from "./balance-status";
+import { copy } from "@/lib/copy";
+import { balanceStatus, displayStatus } from "./balance-status";
 import { useCountUp } from "./use-count-up";
 
 export type MemberRowProps = {
@@ -29,14 +30,14 @@ export function initials(name: string): string {
   return letters.filter(Boolean).join("").toLocaleUpperCase("es-AR");
 }
 
-const srStatus = { positive: "le deben", negative: "debe", settled: "está al día" } as const;
+const srStatus = copy.member.srStatus;
 
 /** Fila de una persona del grupo. Renderiza un `<li>`: usala dentro de `<MemberList>`. */
 export function MemberRow({ name, cents, currency, detail, withoutAccount, animated = false, celebrate }: MemberRowProps) {
   const reduce = useReducedMotion();
   const display = useCountUp(cents, animated);
-  // Estado visual según el valor mostrado (cuenta animada); el texto para lectores usa el final.
-  const status = balanceStatus(display);
+  // Signo, color y flecha según el valor mostrado; "Al día" solo si el saldo final es 0. Lectores: valor final.
+  const status = displayStatus(display, cents);
   const finalStatus = balanceStatus(cents);
 
   return (
@@ -71,7 +72,7 @@ export function MemberRow({ name, cents, currency, detail, withoutAccount, anima
           <span className="min-w-[6ch] truncate text-base text-text @max-[160px]:basis-full">{name}</span>
           {withoutAccount && (
             <span className="shrink-0 rounded-full border border-border px-2 text-xs leading-5 text-muted">
-              sin cuenta
+              {copy.member.withoutAccount}
             </span>
           )}
           {detail && (
@@ -96,7 +97,7 @@ export function MemberRow({ name, cents, currency, detail, withoutAccount, anima
         </span>
         {status === "settled" ? (
           <>
-            <span aria-hidden>Al día</span>
+            <span aria-hidden>{copy.balance.settled}</span>
             <Check size={16} aria-hidden />
           </>
         ) : (

@@ -15,12 +15,12 @@ type FormatOptions = {
 
 /**
  * Formatea centavos enteros respetando el signo, con locale es-AR para ambas monedas.
- * ARS: "$ 1.234,56" · USD: "US$ 1.234,56" · negativos: "− $ 1.234,56" · con showPlus: "+ US$ 1.234,56".
- * Todos los espacios son U+00A0 (entre signo y moneda, y entre moneda y número). El menos es U+2212.
+ * ARS: "$ 1.234,56" · USD: "US$ 1.234,56" · negativos: "−$ 1.234,56" · con showPlus: "+US$ 1.234,56".
+ * El signo va pegado a la moneda; entre la moneda y el número hay un U+00A0. El menos es U+2212.
  */
 export function formatMoney(cents: number, currency: Currency, { showPlus = false }: FormatOptions = {}): string {
   const body = `${symbols[currency]}${NBSP}${number.format(Math.abs(cents) / 100)}`;
-  if (cents < 0) return `−${NBSP}${body}`;
-  if (cents > 0 && showPlus) return `+${NBSP}${body}`;
+  if (cents < 0) return `−${body}`;
+  if (cents > 0 && showPlus) return `+${body}`;
   return body;
 }

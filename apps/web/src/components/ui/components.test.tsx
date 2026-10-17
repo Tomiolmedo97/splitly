@@ -12,7 +12,7 @@ const nb = (s: string) => s.replace(/ /g, "\u00a0");
 describe("BalanceCard", () => {
   it("positivo: signo +, texto e ícono (no solo color)", () => {
     const html = renderToStaticMarkup(<BalanceCard cents={450000} currency="ARS" />);
-    expect(text(html)).toContain(nb("+ $ 4.500,00"));
+    expect(text(html)).toContain(nb("+$ 4.500,00"));
     expect(text(html)).toContain("Te deben");
     expect(html).toContain("lucide-arrow-up");
     expect(html).toContain("text-positive");
@@ -20,21 +20,19 @@ describe("BalanceCard", () => {
 
   it("negativo: signo −, texto e ícono", () => {
     const html = renderToStaticMarkup(<BalanceCard cents={-150000} currency="USD" />);
-    expect(text(html)).toContain(nb("− US$ 1.500,00"));
+    expect(text(html)).toContain(nb("−US$ 1.500,00"));
     expect(text(html)).toContain("Debés");
     expect(html).toContain("lucide-arrow-down");
     expect(html).toContain("text-negative");
   });
 
-  it("variantes de tamaño: 40 solo en resumen, 28 en grilla y 20 bajo 240 px; nunca trunca", () => {
+  it("variantes de tamaño por ancho: resumen 40/28/20 (360, 240), grilla 28/20 (240); nunca trunca", () => {
     const summary = renderToStaticMarkup(<BalanceCard cents={450000} currency="USD" variant="summary" />);
     const grid = renderToStaticMarkup(<BalanceCard cents={450000} currency="USD" />);
-    expect(summary).toContain("text-[40px]");
-    expect(summary).toContain("@max-[360px]:text-[28px]");
-    expect(grid).toContain("text-[28px]");
+    expect(summary).toContain("text-[40px] @max-[360px]:text-[28px] @max-[240px]:text-[20px]");
+    expect(grid).toContain("text-[28px] @max-[240px]:text-[20px]");
     expect(grid).not.toContain("text-[40px]");
     for (const html of [summary, grid]) {
-      expect(html).toContain("@max-[240px]:text-[20px]");
       expect(html).toContain("whitespace-nowrap");
       expect(html).not.toMatch(/truncate|text-ellipsis|overflow-hidden/);
     }
@@ -57,14 +55,14 @@ describe("MemberRow", () => {
     );
     expect(text(html)).toContain("Sofi");
     expect(text(html)).toContain("sin cuenta");
-    expect(text(html)).toContain(nb("− $ 3.000,00"));
+    expect(text(html)).toContain(nb("−$ 3.000,00"));
     expect(text(html)).toContain("debe:");
     expect(html).toContain("lucide-arrow-down");
   });
 
   it("positivo: flecha arriba de 14 px antes del monto", () => {
     const html = renderToStaticMarkup(<MemberRow name="Ana" cents={100} currency="ARS" />);
-    expect(html).toMatch(/lucide-arrow-up[^>]*>.*\+\u00a0\$\u00a01,00/);
+    expect(html).toMatch(/lucide-arrow-up[^>]*>.*\+\$\u00a01,00/);
     expect(html).toContain('width="14"');
   });
 
@@ -113,6 +111,17 @@ describe("TextField", () => {
     expect(html).toContain('aria-describedby="email-error"');
     expect(html).toContain('id="email-error"');
     expect(html).toContain("lucide-circle-alert");
+  });
+
+  it("aria-describedby solo apunta a elementos renderizados (ayuda solo sin error)", () => {
+    const withHint = renderToStaticMarkup(<TextField label="Contraseña" id="pw" hint="Mínimo 8 caracteres" />);
+    expect(withHint).toContain('aria-describedby="pw-hint"');
+    expect(withHint).toContain('id="pw-hint"');
+    const withError = renderToStaticMarkup(
+      <TextField label="Contraseña" id="pw" hint="Mínimo 8 caracteres" error="Completá este campo" />,
+    );
+    expect(withError).toContain('aria-describedby="pw-error"');
+    expect(withError).not.toContain("pw-hint");
   });
 
   it("contraseña: botón 'ver' con aria-label", () => {
