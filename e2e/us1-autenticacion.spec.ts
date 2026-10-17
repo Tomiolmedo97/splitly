@@ -53,7 +53,7 @@ test.describe.fixme("US1: registro, ingreso y cierre de sesión", () => {
     const pagina = await otro.newPage();
     await pagina.goto(RUTAS.registro);
     await pagina.getByLabel(TEXTOS.registro.nombre, { exact: true }).fill("Duplicado");
-    await pagina.getByLabel("Email", { exact: true }).fill(usuario.email.toUpperCase());
+    await pagina.getByLabel(TEXTOS.registro.email, { exact: true }).fill(usuario.email.toUpperCase());
     await campoContrasena(pagina).fill(usuario.contrasena);
     await pagina.getByRole("button", { name: TEXTOS.registro.boton }).click();
 
@@ -65,7 +65,7 @@ test.describe.fixme("US1: registro, ingreso y cierre de sesión", () => {
   test("registro con contraseña de menos de 8 caracteres muestra error", async ({ page, context }) => {
     await page.goto(RUTAS.registro);
     await page.getByLabel(TEXTOS.registro.nombre, { exact: true }).fill("Corta");
-    await page.getByLabel("Email", { exact: true }).fill(emailUnico());
+    await page.getByLabel(TEXTOS.registro.email, { exact: true }).fill(emailUnico());
     await campoContrasena(page).fill("1234567");
     await page.getByRole("button", { name: TEXTOS.registro.boton }).click();
 

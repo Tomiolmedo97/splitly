@@ -14,6 +14,7 @@ import {
   type BrowserContextOptions,
   type Page,
 } from "@playwright/test";
+import { copy } from "../apps/web/src/lib/copy";
 import { BASE_URL, extraHTTPHeaders } from "./entorno";
 
 /**
@@ -29,13 +30,26 @@ export const RUTAS = {
 } as const;
 
 /**
- * Textos de la UI, copiados literalmente de docs/design/textos.md (main @ b43b72e):
- * en main no hay un módulo de copy importable (lib/copy.ts llega con #17; cuando
- * se mergee, se puede importar de ahí). FE muestra el texto según error.code.
+ * Textos de la UI. Los que existen en apps/web/src/lib/copy.ts (#17) se importan
+ * de ahí, así e2e y FE usan la misma fuente. El resto (pantallas que todavía no
+ * están en copy.ts) se copia literal de docs/design/textos.md (main) y se pasa a
+ * `copy` cuando FE los agregue. FE muestra el texto según error.code.
  */
 export const TEXTOS = {
-  ingreso: { titulo: "Ingresá a Splitly", boton: "Ingresar", linkRegistro: "Creá una" },
-  registro: { titulo: "Creá tu cuenta", nombre: "Tu nombre", boton: "Crear cuenta" },
+  ingreso: {
+    titulo: copy.login.title,
+    email: copy.login.emailLabel,
+    contrasena: copy.login.passwordLabel,
+    boton: copy.login.submit,
+    linkRegistro: copy.login.toRegisterLink,
+  },
+  registro: {
+    titulo: copy.register.title,
+    nombre: copy.register.nameLabel,
+    email: copy.register.emailLabel,
+    contrasena: copy.register.passwordLabel,
+    boton: copy.register.submit,
+  },
   misGrupos: {
     saludo: (nombre: string) => `Hola, ${nombre}`,
     nuevoGrupo: "Nuevo grupo",
@@ -46,7 +60,7 @@ export const TEXTOS = {
     titulo: "Nuevo grupo",
     nombre: "Nombre del grupo",
     moneda: "Moneda",
-    ayudaMoneda: "Podés cambiarla mientras el grupo no tenga gastos",
+    ayudaMoneda: copy.newGroup.currencyHelp,
     participantes: "Participantes",
     soloNombre: "Agregar solo con nombre",
     deTusGrupos: "Agregar de tus grupos",
@@ -61,17 +75,19 @@ export const TEXTOS = {
   general: { cerrarSesion: "Cerrar sesión", volverAMisGrupos: "Volver a mis grupos" },
   detalle: { saldos: "Saldos", gastos: "Gastos" },
   errores: {
-    emailTomado: "Ya hay una cuenta con este email",
-    credenciales: "El email o la contraseña no coinciden",
-    contrasenaCorta: "La contraseña tiene que tener al menos 8 caracteres",
+    /** Campo vacío (mismo texto para auth y formularios de grupo). */
+    campoVacio: copy.authErrors.required,
+    emailTomado: copy.authErrors.emailTaken,
+    credenciales: copy.authErrors.invalidCredentials,
+    contrasenaCorta: copy.authErrors.passwordTooShort,
     nombreGrupoVacio: "Ponele un nombre al grupo",
     nombreDuplicado: "Ya hay alguien con ese nombre",
     /** CURRENCY_LOCKED. */
-    monedaBloqueada: "Este grupo ya tiene gastos, así que la moneda no se puede cambiar",
+    monedaBloqueada: copy.groupErrors.currencyLocked,
     /** MEMBER_DUPLICATE por userId. */
-    personaYaAgregada: "Esa persona ya está en el grupo",
+    personaYaAgregada: copy.groupErrors.memberDuplicate,
     /** NOT_FOUND (pantalla not-found.tsx): también para quien no es miembro. */
-    grupoNoEncontrado: "No encontramos este grupo o no tenés acceso",
+    grupoNoEncontrado: copy.groupErrors.notFound,
   },
 } as const;
 
@@ -101,7 +117,7 @@ export function nuevoUsuario(nombre = "Tester QA"): UsuarioDePrueba {
 
 /** Campo de contraseña: exact para no matchear el botón "ver" (aria-label). */
 export function campoContrasena(page: Page) {
-  return page.getByLabel("Contraseña", { exact: true });
+  return page.getByLabel(copy.login.passwordLabel, { exact: true });
 }
 
 /**
@@ -111,7 +127,7 @@ export function campoContrasena(page: Page) {
 export async function registrar(page: Page, usuario: UsuarioDePrueba = nuevoUsuario()) {
   await page.goto(RUTAS.registro);
   await page.getByLabel(TEXTOS.registro.nombre, { exact: true }).fill(usuario.nombre);
-  await page.getByLabel("Email", { exact: true }).fill(usuario.email);
+  await page.getByLabel(TEXTOS.registro.email, { exact: true }).fill(usuario.email);
   await campoContrasena(page).fill(usuario.contrasena);
   await page.getByRole("button", { name: TEXTOS.registro.boton }).click();
   await expect(page).toHaveURL(new RegExp(`${RUTAS.grupos}(\\?|$)`));
@@ -122,7 +138,7 @@ export async function registrar(page: Page, usuario: UsuarioDePrueba = nuevoUsua
 /** Ingresa por la pantalla de Ingreso (wireframe 1). */
 export async function ingresar(page: Page, email: string, contrasena: string) {
   await page.goto(RUTAS.ingreso);
-  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel(TEXTOS.ingreso.email, { exact: true }).fill(email);
   await campoContrasena(page).fill(contrasena);
   await page.getByRole("button", { name: TEXTOS.ingreso.boton, exact: true }).click();
 }

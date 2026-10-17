@@ -108,7 +108,7 @@ test.describe.fixme("US3: participantes sin cuenta (solo con nombre)", () => {
     // "Completá este campo" debajo del campo.
     await expect(agregar).toBeEnabled();
     await agregar.click();
-    await expect(page.getByText("Completá este campo")).toBeVisible();
+    await expect(page.getByText(TEXTOS.errores.campoVacio)).toBeVisible();
     await expect(agregar).toBeEnabled();
     // Solo queda quien crea el grupo.
     await expect(participantes(page).getByRole("listitem")).toHaveCount(1);
