@@ -66,7 +66,9 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Ayuda moneda | Podés cambiarla mientras el grupo no tenga gastos |
 | Sección (h2) | Participantes |
 | Vos | {nombre} (vos) |
-| Agregar por email | Agregar por email |
+| Agregar de tus grupos | Agregar de tus grupos |
+| Buscador (placeholder) | Buscá por nombre |
+| Lista vacía en la búsqueda | No hay nadie con ese nombre en tus grupos |
 | Agregar solo con nombre | Agregar solo con nombre |
 | Etiqueta | Sin cuenta |
 | Ayuda sin cuenta | Para quien no usa Splitly. Igual aparece en los gastos y saldos |
@@ -79,7 +81,7 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 |---|---|
 | Nombre vacío | Ponele un nombre al grupo |
 | Nombre muy largo | El nombre puede tener hasta 40 caracteres |
-| Email ya agregado | Esa persona ya está en el grupo |
+| Persona ya agregada | Esa persona ya está en el grupo |
 | Nombre duplicado | Ya hay alguien con ese nombre. Sumale una inicial para distinguirlos |
 | Sin acceso (403) o inexistente (404) | No encontramos este grupo o no tenés acceso |
 | Quitar miembro con saldo | {nombre} todavía tiene saldo. Tiene que quedar al día antes de salir del grupo |

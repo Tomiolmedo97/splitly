@@ -88,9 +88,11 @@ Moneda       ( ARS ) ( USD )
 Miembros
   Tomas (vos)
   Juan  (sin cuenta)
-  [ + Agregar por email ]  [ + Agregar solo con nombre ]
+  [ + Agregar de tus grupos ]  [ + Agregar solo con nombre ]
 ```
+"Agregar de tus grupos" abre una lista con buscador de las personas con cuenta que comparten otro grupo con vos (nombre y avatar, sin mostrar el email). Si no hay nadie, ese botón no se muestra y queda solo "Agregar solo con nombre".
 Los miembros sin cuenta llevan la etiqueta "sin cuenta" en muted y funcionan igual en gastos y saldos.
+En el MVP no se invita por email; eso está en Próximas versiones.
 Crear deshabilitado sin nombre. Al crear, entra directo al detalle del grupo.
 
 ## Estados comunes
@@ -99,6 +101,7 @@ Error: texto negativo + acción para reintentar. Foco visible: anillo de 2 px pr
 
 ## Próximas versiones (fuera del MVP)
 - Ingreso con Google.
+- Invitar por email y vincular la cuenta cuando esa persona se registre.
 - Pantalla Saldar deuda
 ```
 ←  Saldar
