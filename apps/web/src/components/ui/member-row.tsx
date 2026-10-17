@@ -62,16 +62,24 @@ export function MemberRow({ name, cents, currency, detail, withoutAccount, anima
       >
         {initials(name)}
       </span>
-      <span className="relative min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="truncate text-base text-text">{name}</span>
+      {/*
+        El nombre conserva al menos 6 caracteres visibles. Si no entra junto a la etiqueta "sin cuenta"
+        (columna < 160 px), la etiqueta baja a la segunda línea, al lado del detalle.
+      */}
+      <span className="@container relative min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-x-2">
+          <span className="min-w-[6ch] truncate text-base text-text @max-[160px]:basis-full">{name}</span>
           {withoutAccount && (
             <span className="shrink-0 rounded-full border border-border px-2 text-xs leading-5 text-muted">
               sin cuenta
             </span>
           )}
+          {detail && (
+            <span className="min-w-0 basis-full truncate text-sm text-muted @max-[160px]:flex-1 @max-[160px]:basis-auto">
+              {detail}
+            </span>
+          )}
         </span>
-        {detail && <span className="block truncate text-sm text-muted">{detail}</span>}
       </span>
       <span
         className={cn(

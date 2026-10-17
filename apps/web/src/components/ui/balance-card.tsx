@@ -15,7 +15,7 @@ export type BalanceCardProps = {
   /** Cuenta animada al cambiar el saldo (600 ms). Respeta prefers-reduced-motion. */
   animated?: boolean;
   /**
-   * "summary": tarjeta resumen de Mis grupos (monto 40 px).
+   * "summary": tarjeta resumen de Mis grupos (monto 40 px; 28 px si la tarjeta mide menos de 360 px).
    * "grid" (por defecto): tarjetas en grilla (monto 28 px).
    * En ambos casos baja a 20 px si la tarjeta mide menos de 240 px (container query).
    */
@@ -25,11 +25,11 @@ export type BalanceCardProps = {
 
 // El monto nunca se trunca ni se parte: nowrap + espacios duros de formatMoney, sin overflow-hidden.
 const amountSize = {
-  summary: "text-[40px] @max-[240px]:text-[20px]",
+  summary: "text-[40px] @max-[360px]:text-[28px] @max-[240px]:text-[20px]",
   grid: "text-[28px] @max-[240px]:text-[20px]",
 } as const;
 const iconSize = {
-  summary: "size-8 @max-[240px]:size-4",
+  summary: "size-8 @max-[360px]:size-6 @max-[240px]:size-4",
   grid: "size-6 @max-[240px]:size-4",
 } as const;
 

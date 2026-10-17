@@ -55,7 +55,7 @@ export const copy = {
     retry: "Probar de nuevo",
     genericError: "Algo salió mal. Probá de nuevo",
     sessionExpired: "Tu sesión terminó. Ingresá de nuevo",
-    /** Pendiente de validar con Design Bot: no figura en textos.md. */
-    comingSoon: "Próximamente vas a poder usar esto. Todavía no guardamos nada.",
+    /** Aviso al enviar Ingreso/Registro mientras no hay Server Actions. */
+    comingSoon: "Muy pronto vas a poder ingresar. Por ahora no guardamos tus datos",
   },
 } as const;

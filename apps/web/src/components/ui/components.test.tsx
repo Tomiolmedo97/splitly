@@ -30,6 +30,7 @@ describe("BalanceCard", () => {
     const summary = renderToStaticMarkup(<BalanceCard cents={450000} currency="USD" variant="summary" />);
     const grid = renderToStaticMarkup(<BalanceCard cents={450000} currency="USD" />);
     expect(summary).toContain("text-[40px]");
+    expect(summary).toContain("@max-[360px]:text-[28px]");
     expect(grid).toContain("text-[28px]");
     expect(grid).not.toContain("text-[40px]");
     for (const html of [summary, grid]) {
@@ -65,6 +66,11 @@ describe("MemberRow", () => {
     const html = renderToStaticMarkup(<MemberRow name="Ana" cents={100} currency="ARS" />);
     expect(html).toMatch(/lucide-arrow-up[^>]*>.*\+\u00a0\$\u00a01,00/);
     expect(html).toContain('width="14"');
+  });
+
+  it("el nombre conserva al menos 6 caracteres", () => {
+    const html = renderToStaticMarkup(<MemberRow name="Sofi" cents={-1} currency="ARS" withoutAccount />);
+    expect(html).toMatch(/class="[^"]*min-w-\[6ch\][^"]*">Sofi</);
   });
 
   it("sin badge por defecto", () => {
