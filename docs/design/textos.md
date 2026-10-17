@@ -118,7 +118,7 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 FE muestra siempre el texto según el `code`, nunca el `message` del servidor. `fieldErrors` se muestra debajo de cada campo con el texto de la tabla de validación.
 | `code` | Texto |
 |---|---|
-| `VALIDATION` | (por campo, ver errores de autenticación y de grupos) |
+| `VALIDATION_ERROR` | (por campo, ver errores de autenticación y de grupos) |
 | `EMAIL_TAKEN` | Ya hay una cuenta con este email. ¿Querés ingresar? |
 | `INVALID_CREDENTIALS` | El email o la contraseña no coinciden |
 | `PASSWORD_TOO_SHORT` | La contraseña tiene que tener al menos 8 caracteres |
@@ -127,4 +127,5 @@ FE muestra siempre el texto según el `code`, nunca el `message` del servidor. `
 | `MEMBER_DUPLICATE` | Esa persona ya está en el grupo |
 | `FORBIDDEN` | Este grupo no es tuyo o ya no sos parte |
 | `NOT_FOUND` | No encontramos este grupo |
+| `CURRENCY_LOCKED` | La moneda no se puede cambiar después de crear el grupo |
 | `INTERNAL` | Algo salió mal. Probá de nuevo |
