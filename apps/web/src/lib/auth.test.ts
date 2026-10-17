@@ -26,8 +26,13 @@ describe("errorText", () => {
   it("tiene texto para todos los códigos", () => {
     for (const code of ERROR_CODES) expect(errorCopy[code]).toBeTruthy();
   });
-  it("FORBIDDEN y NOT_FOUND comparten texto", () => {
-    expect(errorCopy.FORBIDDEN).toBe(errorCopy.NOT_FOUND);
+  it("textos finales de PR #16 (af9a93f)", () => {
+    expect(errorCopy.NOT_FOUND).toBe("No encontramos este grupo o no tenés acceso");
+    expect(errorCopy.FORBIDDEN).toBe("No tenés permiso para hacer esto en el grupo");
+    expect(errorText({ code: "MEMBER_HAS_BALANCE" }, { nombre: "Juan" })).toBe(
+      "Juan todavía tiene saldo. Tiene que quedar al día antes de salir del grupo",
+    );
+    expect(errorText({ code: "MEMBER_HAS_BALANCE" })).toBe(copy.general.genericError);
   });
   it("nunca muestra el message del servidor", () => {
     const fromServer = { code: "EMAIL_TAKEN", message: "duplicate key value violates unique constraint" };

@@ -21,7 +21,8 @@ const base =
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-primary text-on-primary enabled:hover:bg-[color-mix(in_srgb,var(--color-primary)_94%,black)]",
   secondary:
-    "border border-border bg-surface text-text enabled:hover:bg-[color-mix(in_srgb,var(--color-surface)_94%,black)]",
+    "border border-border bg-surface text-text enabled:hover:bg-[color-mix(in_srgb,var(--color-surface)_94%,black)] " +
+    "dark:enabled:hover:bg-[color-mix(in_srgb,var(--color-surface)_94%,white)]",
   // Link: siempre `primary` (#0F766E en claro), nunca el teal del logo.
   text: "bg-transparent text-primary underline-offset-4 enabled:hover:text-[color-mix(in_srgb,var(--color-primary)_94%,black)] enabled:hover:underline",
 };

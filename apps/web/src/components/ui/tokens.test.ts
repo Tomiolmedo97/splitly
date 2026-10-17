@@ -14,6 +14,7 @@ function block(selectorStart: string): Record<string, string> {
 const keys = {
   bg: "bg", surface: "surface", text: "text", muted: "muted", border: "border", primary: "primary",
   "on-primary": "onPrimary", positive: "positive", negative: "negative", celebrate: "celebrate",
+  "logo-top": "logoTop", "logo-bottom": "logoBottom",
 } as const satisfies Record<string, keyof ThemeColors>;
 
 function luminance(hex: string): number {

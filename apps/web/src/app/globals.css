@@ -27,6 +27,9 @@
   --color-negative: #b91c1c;
   /* Solo confeti y destello de "al día". Nunca texto. */
   --color-celebrate: #fde047;
+  /* Solo logo (nunca texto). */
+  --color-logo-top: #12312b;
+  --color-logo-bottom: #0d9488;
 }
 
 .dark,
@@ -41,5 +44,7 @@
   --color-positive: #4ade80;
   --color-negative: #f87171;
   --color-celebrate: #fde047;
+  --color-logo-top: #ecf5f2;
+  --color-logo-bottom: #2dd4bf;
   color-scheme: dark;
 }

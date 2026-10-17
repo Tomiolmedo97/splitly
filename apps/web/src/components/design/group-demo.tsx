@@ -75,6 +75,7 @@ export function GroupDemo({ currency }: { currency: Currency }) {
         cents={me.cents}
         currency={currency}
         animated
+        variant="summary"
         className="bg-bg dark:bg-bg"
       />
 

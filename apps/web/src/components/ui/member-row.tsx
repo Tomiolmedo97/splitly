@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Check } from "lucide-react";
+import { ArrowDown, ArrowUp, Check } from "lucide-react";
 import { formatMoney, type Currency } from "@/lib/format-money";
 import { cn } from "@/lib/cn";
 import { balanceStatus } from "./balance-status";
@@ -35,7 +35,9 @@ const srStatus = { positive: "le deben", negative: "debe", settled: "está al d�
 export function MemberRow({ name, cents, currency, detail, withoutAccount, animated = false, celebrate }: MemberRowProps) {
   const reduce = useReducedMotion();
   const display = useCountUp(cents, animated);
-  const status = balanceStatus(cents);
+  // Estado visual según el valor mostrado (cuenta animada); el texto para lectores usa el final.
+  const status = balanceStatus(display);
+  const finalStatus = balanceStatus(cents);
 
   return (
     <li
@@ -73,13 +75,17 @@ export function MemberRow({ name, cents, currency, detail, withoutAccount, anima
       </span>
       <span
         className={cn(
-          "relative shrink-0 text-base font-semibold tabular-nums",
+          "relative flex shrink-0 items-center gap-1 text-base font-semibold whitespace-nowrap tabular-nums",
           status === "positive" && "text-positive",
           status === "negative" && "text-negative",
-          status === "settled" && "flex items-center gap-1 text-text",
+          status === "settled" && "text-text",
         )}
       >
-        <span className="sr-only">{`${srStatus[status]}${status === "settled" ? "" : ": "}`}</span>
+        <span className="sr-only">
+          {finalStatus === "settled"
+            ? srStatus.settled
+            : `${srStatus[finalStatus]}: ${formatMoney(cents, currency, { showPlus: true })}`}
+        </span>
         {status === "settled" ? (
           <>
             <span aria-hidden>Al día</span>
@@ -87,8 +93,12 @@ export function MemberRow({ name, cents, currency, detail, withoutAccount, anima
           </>
         ) : (
           <>
+            {status === "positive" ? (
+              <ArrowUp size={14} aria-hidden className="shrink-0" />
+            ) : (
+              <ArrowDown size={14} aria-hidden className="shrink-0" />
+            )}
             <span aria-hidden>{formatMoney(display, currency, { showPlus: true })}</span>
-            <span className="sr-only">{formatMoney(cents, currency, { showPlus: true })}</span>
           </>
         )}
       </span>

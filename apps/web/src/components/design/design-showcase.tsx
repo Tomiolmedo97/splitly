@@ -58,7 +58,7 @@ export function DesignShowcase() {
       className={cn("min-h-screen bg-bg text-text transition-colors duration-300", theme.dark && "dark")}
       data-theme={theme.dark ? "dark" : "light"}
     >
-      <div className="mx-auto max-w-xl px-4 py-10 sm:py-16">
+      <div className="mx-auto max-w-3xl px-4 py-10 sm:py-16">
         <SplitlyLogo top={c.logoTop} bottom={c.logoBottom} text={c.text} />
         <h1 className="mt-8 text-[28px] font-semibold tracking-tight">Así se va a ver Splitly</h1>
         <p className="mt-2 text-base text-muted">

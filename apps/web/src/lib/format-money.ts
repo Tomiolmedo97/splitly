@@ -1,9 +1,12 @@
 export type Currency = "ARS" | "USD";
 
-const formatters: Record<Currency, Intl.NumberFormat> = {
-  ARS: new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }),
-  USD: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", currencyDisplay: "code" }),
-};
+/** Espacio duro (U+00A0): el monto nunca se parte entre líneas. */
+export const NBSP = "\u00a0";
+
+const symbols: Record<Currency, string> = { ARS: "$", USD: "US$" };
+
+// Mismo formato de número es-AR para las dos monedas; solo cambia el símbolo.
+const number = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 type FormatOptions = {
   /** Muestra "+" en positivos (útil para saldos). Por defecto, false. */
@@ -11,16 +14,13 @@ type FormatOptions = {
 };
 
 /**
- * Formatea centavos enteros respetando el signo.
- * ARS: "$ 1.234,56" · USD: "US$ 1,234.56" · negativos: "−$ 1.234,56"
+ * Formatea centavos enteros respetando el signo, con locale es-AR para ambas monedas.
+ * ARS: "$ 1.234,56" · USD: "US$ 1.234,56" · negativos: "− $ 1.234,56" · con showPlus: "+ US$ 1.234,56".
+ * Todos los espacios son U+00A0 (entre signo y moneda, y entre moneda y número). El menos es U+2212.
  */
 export function formatMoney(cents: number, currency: Currency, { showPlus = false }: FormatOptions = {}): string {
-  const value = Math.abs(cents) / 100;
-  const body =
-    currency === "USD"
-      ? `US$ ${formatters.USD.format(value).replace("USD", "").trim()}`
-      : formatters.ARS.format(value).replace(/\u00a0/g, " ");
-  if (cents < 0) return `−${body}`;
-  if (cents > 0 && showPlus) return `+${body}`;
+  const body = `${symbols[currency]}${NBSP}${number.format(Math.abs(cents) / 100)}`;
+  if (cents < 0) return `−${NBSP}${body}`;
+  if (cents > 0 && showPlus) return `+${NBSP}${body}`;
   return body;
 }

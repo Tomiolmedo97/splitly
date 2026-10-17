@@ -1,5 +1,5 @@
 /**
- * Textos de la UI. Fuente: docs/design/textos.md (PR #16, 39f2747).
+ * Textos de la UI. Fuente: docs/design/textos.md (PR #16, mergeado en main como 076ed72).
  * No editar los strings acá sin actualizar ese documento.
  */
 export const copy = {
@@ -40,12 +40,15 @@ export const copy = {
   },
   groupErrors: {
     memberDuplicate: "Esa persona ya está en el grupo",
-    forbidden: "Este grupo no es tuyo o ya no sos parte",
-    notFound: "No encontramos este grupo",
+    /** 403 o 404: un no miembro recibe NOT_FOUND con este texto. */
+    notFound: "No encontramos este grupo o no tenés acceso",
+    /** Miembro que intenta una acción no permitida. */
+    forbidden: "No tenés permiso para hacer esto en el grupo",
+    memberHasBalance: "{nombre} todavía tiene saldo. Tiene que quedar al día antes de salir del grupo",
+    currencyLocked: "Este grupo ya tiene gastos, así que la moneda no se puede cambiar",
   },
   newGroup: {
-    currencyHelp: "No se puede cambiar después de crear el grupo",
-    currencyLocked: "La moneda no se puede cambiar después de crear el grupo",
+    currencyHelp: "Podés cambiarla mientras el grupo no tenga gastos",
   },
   general: {
     loading: "Cargando",
