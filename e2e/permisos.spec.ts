@@ -25,25 +25,19 @@ import {
 } from "./fixtures";
 
 /**
- * Un no miembro recibe NOT_FOUND (nunca FORBIDDEN), así no se filtra si el
- * grupo existe. En la UI: 404 (notFound() de Next), una redirección fuera del
- * detalle o el texto "No encontramos este grupo o no tenés acceso".
- * SUPUESTO: FE confirma si es 404 con ese texto o redirección.
+ * Confirmado por FE/Design: un no miembro recibe NOT_FOUND (nunca FORBIDDEN),
+ * así no se filtra si el grupo existe. Next notFound() responde HTTP 404 real,
+ * la URL no cambia (no hay redirección) y se ve la pantalla not-found.tsx con
+ * "No encontramos este grupo o no tenés acceso" y el botón "Volver a mis grupos".
  */
-async function esperarAccesoDenegado(page: Page, respuesta: Response | null, idGrupo: string) {
-  const status = respuesta?.status() ?? 0;
-  expect(status, "un no miembro nunca recibe 403: no se revela que el grupo existe").not.toBe(403);
-  // Se reintenta hasta que la página se asiente (render del error o redirección).
-  await expect
-    .poll(
-      async () => {
-        const redirigio = !new URL(page.url()).pathname.endsWith(RUTAS.grupo(idGrupo));
-        const conTexto = (await page.getByText(TEXTOS.errores.grupoNoEncontrado).count()) > 0;
-        return status === 404 || redirigio || conTexto;
-      },
-      { message: `acceso denegado (status ${status})` },
-    )
-    .toBe(true);
+async function esperarAccesoDenegado(page: Page, respuesta: Response | null, rutaPedida: string) {
+  expect(respuesta, "goto tiene que devolver la respuesta del documento").not.toBeNull();
+  expect(respuesta!.status()).toBe(404);
+  const pedida = new URL(rutaPedida, page.url());
+  const actual = new URL(page.url());
+  expect(actual.pathname + actual.search).toBe(pedida.pathname + pedida.search);
+  await expect(page.getByText(TEXTOS.errores.grupoNoEncontrado)).toBeVisible();
+  await expect(page.getByRole("button", { name: TEXTOS.general.volverAMisGrupos })).toBeVisible();
 }
 
 // Se habilita cuando existan las Server Actions de grupos.
@@ -60,9 +54,13 @@ test.describe.fixme("Permisos: acceso a grupos ajenos", () => {
     await registrar(bruno, nuevoUsuario("Bruno Ajeno"));
     const respuesta = await bruno.goto(RUTAS.grupo(id));
 
-    await esperarAccesoDenegado(bruno, respuesta, id);
+    await esperarAccesoDenegado(bruno, respuesta, RUTAS.grupo(id));
     // Nunca se filtra el contenido del grupo.
     await expect(bruno.getByText(nombre)).toHaveCount(0);
+
+    // "Volver a mis grupos" lleva a Mis grupos.
+    await bruno.getByRole("button", { name: TEXTOS.general.volverAMisGrupos }).click();
+    await expect(bruno).toHaveURL(new RegExp(`${RUTAS.grupos}$`));
     await contextoBruno.close();
   });
 
@@ -75,9 +73,10 @@ test.describe.fixme("Permisos: acceso a grupos ajenos", () => {
     const bruno = await contextoBruno.newPage();
     await registrar(bruno, nuevoUsuario("Bruno Ajeno"));
     // Confirmado por FE: la pestaña Gastos es ?tab=gastos (Saldos es la de por defecto).
-    const respuesta = await bruno.goto(`${RUTAS.grupo(id)}?tab=gastos`);
+    const ruta = `${RUTAS.grupo(id)}?tab=gastos`;
+    const respuesta = await bruno.goto(ruta);
 
-    await esperarAccesoDenegado(bruno, respuesta, id);
+    await esperarAccesoDenegado(bruno, respuesta, ruta);
     await expect(bruno.getByText(nombre)).toHaveCount(0);
     await expect(bruno.getByRole("button", { name: /Agregar gasto/ })).toHaveCount(0);
     await contextoBruno.close();
@@ -95,7 +94,7 @@ test.describe.fixme("Permisos: acceso a grupos ajenos", () => {
 
     for (const ruta of [RUTAS.grupo(id), `${RUTAS.grupo(id)}?tab=gastos`]) {
       const respuesta = await nora.goto(ruta);
-      await esperarAccesoDenegado(nora, respuesta, id);
+      await esperarAccesoDenegado(nora, respuesta, ruta);
       await expect(nora.getByText(SEED.grupo.invitado)).toHaveCount(0);
     }
     await contextoNora.close();
@@ -107,7 +106,7 @@ test.describe.fixme("Permisos: acceso a grupos ajenos", () => {
     const id = "grupo-que-no-existe";
     const respuesta = await page.goto(RUTAS.grupo(id));
 
-    await esperarAccesoDenegado(page, respuesta, id);
+    await esperarAccesoDenegado(page, respuesta, RUTAS.grupo(id));
   });
 
   test("Mis grupos muestra solo los grupos propios", async ({ browser, page }) => {
