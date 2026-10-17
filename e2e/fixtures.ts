@@ -50,6 +50,8 @@ export const TEXTOS = {
     boton: "Crear grupo",
   },
   general: { cerrarSesion: "Cerrar sesión" },
+  // TODO(copy): la ayuda de moneda y el texto de CURRENCY_LOCKED los está ajustando
+  // Design; se agregan acá cuando estén cerrados en textos.md (no se fijan antes).
   errores: {
     emailTomado: "Ya hay una cuenta con este email",
     credenciales: "El email o la contraseña no coinciden",
