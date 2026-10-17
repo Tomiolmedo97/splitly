@@ -21,6 +21,16 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Prisma validate + generate
+        # Placeholders: no hay base en CI; validate/generate no se conectan.
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/splitly
+          DIRECT_URL: postgresql://ci:ci@localhost:5432/splitly
+        run: |
+          pnpm --filter @splitly/web db:validate
+          pnpm --filter @splitly/web db:generate
+      - name: Lint del contrato OpenAPI
+        run: pnpm lint:api
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test

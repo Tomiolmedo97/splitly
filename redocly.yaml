@@ -1,0 +1,5 @@
+# Configuración de Redocly CLI para lintear docs/api/openapi.yaml (corre en CI).
+extends:
+  - recommended
+# Los endpoints propios de Auth.js (csrf, callback, signout, session) responden con
+# redirecciones o null y no tienen 4XX/2XX propios: se ignoran en .redocly.lint-ignore.yaml.
