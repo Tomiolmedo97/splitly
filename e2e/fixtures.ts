@@ -58,7 +58,7 @@ export const TEXTOS = {
     sinCuenta: "Sin cuenta",
     boton: "Crear grupo",
   },
-  general: { cerrarSesion: "Cerrar sesión" },
+  general: { cerrarSesion: "Cerrar sesión", volverAMisGrupos: "Volver a mis grupos" },
   detalle: { saldos: "Saldos", gastos: "Gastos" },
   errores: {
     emailTomado: "Ya hay una cuenta con este email",
@@ -70,7 +70,7 @@ export const TEXTOS = {
     monedaBloqueada: "Este grupo ya tiene gastos, así que la moneda no se puede cambiar",
     /** MEMBER_DUPLICATE por userId. */
     personaYaAgregada: "Esa persona ya está en el grupo",
-    /** NOT_FOUND: también para quien no es miembro (no se filtra si el grupo existe). */
+    /** NOT_FOUND (pantalla not-found.tsx): también para quien no es miembro. */
     grupoNoEncontrado: "No encontramos este grupo o no tenés acceso",
   },
 } as const;

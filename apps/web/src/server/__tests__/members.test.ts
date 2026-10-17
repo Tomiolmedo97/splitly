@@ -22,8 +22,9 @@ describe("addMember", () => {
     it.todo("un nombre repetido entre los miembros sin cuenta activos devuelve MEMBER_DUPLICATE");
     it.todo("'Martin' y después 'martin' devuelve MEMBER_DUPLICATE (sin distinguir mayúsculas)");
     it.todo("'Martín' y después ' Martín ' devuelve MEMBER_DUPLICATE (trim)");
+    it.todo("'Martín' y después 'martín ' devuelve MEMBER_DUPLICATE (mayúsculas + trim)");
     it.todo("el índice de duplicados usa lower(trim(name)) y solo cubre invitados activos (removedAt null)");
-    it.todo("acentos: 'Martin' vs 'Martín' (TODO: BE todavía no lo define; se completa el esperado cuando decida)");
+    it.todo("'Martin' y 'Martín' NO son duplicados: los acentos se distinguen (se crean los dos)");
     it.todo("el mismo nombre que un miembro CON cuenta se permite: el duplicado de nombre se mira solo entre los sin cuenta");
     it.todo("el nombre de un miembro sin cuenta quitado (removedAt) se puede volver a usar");
   });

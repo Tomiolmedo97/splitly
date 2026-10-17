@@ -29,17 +29,20 @@ describe("efectos del soft delete en otras reglas", () => {
 
 describe("monto máximo por gasto (columnas BigInt, number en la app)", () => {
   // Máximo del MVP: $ 999.999.999,99 = 99999999999 centavos (AM-07).
-  // El texto del error ("El monto máximo por gasto es $ 999.999.999,99") está
-  // pendiente en textos.md: acá solo se mira error.code.
+  // Texto de FE (no se fija acá): "El monto máximo por gasto es {monto}", con
+  // {monto} = formatMoney(99999999999, moneda del grupo) ($ o US$). Acá solo error.code.
   it.todo("un gasto de 99999999999 centavos se acepta");
   it.todo("un gasto de 100000000000 centavos devuelve VALIDATION_ERROR con fieldErrors.amount");
+  it.todo("el CHECK de la base rechaza un monto mayor al máximo aunque se saltee Zod (insert directo)");
   it.todo("los montos llegan a las acciones y al cliente como number, nunca como bigint (typeof === 'number')");
   it.todo("la suma de saldos con muchos gastos del máximo queda dentro de Number.MAX_SAFE_INTEGER y es exacta");
   it.todo("las partes de un split de un gasto máximo son enteros exactos (Number.isSafeInteger)");
 });
 
-describe("integridad entre grupos (FK compuesta, PR #20)", () => {
-  it.todo("un gasto cuyo pagador es un miembro de otro grupo se rechaza");
-  it.todo("un split que referencia a un miembro de otro grupo se rechaza");
-  it.todo("el rechazo llega como un error de la acción (VALIDATION_ERROR o NOT_FOUND según BE), nunca como INTERNAL");
+describe("pagador y participantes válidos (validación en el servicio; la FK compuesta de #20 es respaldo)", () => {
+  it.todo("un pagador que es miembro de otro grupo devuelve VALIDATION_ERROR con fieldErrors.paidByMemberId");
+  it.todo("un participante (split) de otro grupo devuelve VALIDATION_ERROR con fieldErrors.splits");
+  it.todo("un pagador quitado (removedAt) devuelve VALIDATION_ERROR con fieldErrors.paidByMemberId");
+  it.todo("un participante quitado (removedAt) devuelve VALIDATION_ERROR con fieldErrors.splits");
+  it.todo("nunca llega a la FK: el rechazo es VALIDATION_ERROR, no INTERNAL");
 });

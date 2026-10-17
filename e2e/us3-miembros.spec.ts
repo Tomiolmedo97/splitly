@@ -38,7 +38,7 @@ function filaDe(page: Page, nombre: string | RegExp) {
   return participantes(page).getByRole("listitem").filter({ hasText: nombre });
 }
 
-/** SUPUESTO: "Agregar solo con nombre" abre un campo "Nombre" y un botón "Agregar". */
+/** Confirmado por Design: abre un campo inline "Nombre" con el botón "Agregar". */
 async function abrirAgregarSoloConNombre(page: Page) {
   await page.getByRole("button", { name: TEXTOS.nuevoGrupo.soloNombre }).click();
 }
@@ -102,21 +102,39 @@ test.describe.fixme("US3: participantes sin cuenta (solo con nombre)", () => {
     await page.goto(RUTAS.nuevoGrupo);
     await abrirAgregarSoloConNombre(page);
     await page.getByLabel("Nombre", { exact: true }).fill("   ");
+    const agregar = page.getByRole("button", { name: "Agregar", exact: true });
 
-    // SUPUESTO (FE confirma): mismo patrón que el nombre del grupo. "Agregar" está
-    // habilitado y, al enviar vacío, muestra "Completá este campo" (textos.md).
-    await page.getByRole("button", { name: "Agregar", exact: true }).click();
+    // Confirmado por Design: el botón sigue habilitado; vacío + Agregar muestra
+    // "Completá este campo" debajo del campo.
+    await expect(agregar).toBeEnabled();
+    await agregar.click();
     await expect(page.getByText("Completá este campo")).toBeVisible();
+    await expect(agregar).toBeEnabled();
     // Solo queda quien crea el grupo.
     await expect(participantes(page).getByRole("listitem")).toHaveCount(1);
   });
 
+  test("Enter en el campo Nombre también agrega al invitado", async ({ page, usuarioRegistrado }) => {
+    expect(usuarioRegistrado.email).toBeTruthy();
+    await page.goto(RUTAS.nuevoGrupo);
+    await abrirAgregarSoloConNombre(page);
+    await page.getByLabel("Nombre", { exact: true }).fill("Juan");
+    await page.getByLabel("Nombre", { exact: true }).press("Enter");
+
+    const fila = filaDe(page, "Juan");
+    await expect(fila).toBeVisible();
+    await expect(fila.getByText(TEXTOS.nuevoGrupo.sinCuenta)).toBeVisible();
+    // Enter agrega al invitado, no envía el formulario del grupo.
+    await expect(page).toHaveURL(new RegExp(`${RUTAS.nuevoGrupo}$`));
+  });
+
   // Confirmado por BE: los duplicados de invitados se comparan sin distinguir
   // mayúsculas y sin espacios en los bordes (índice sobre lower(trim(name)) entre
-  // los invitados activos). Todos dan MEMBER_DUPLICATE.
+  // los invitados activos), pero SÍ distinguen acentos. Duplicado: MEMBER_DUPLICATE.
   for (const [primero, segundo, caso] of [
     ["Martin", "martin", "mayúsculas"],
     ["Martín", " Martín ", "espacios en los bordes"],
+    ["Martín", "martín ", "mayúsculas y espacio final"],
   ] as const) {
     test(`no se puede repetir el nombre de un invitado (${caso}: "${primero}" y "${segundo}")`, async ({
       page,
@@ -132,8 +150,16 @@ test.describe.fixme("US3: participantes sin cuenta (solo con nombre)", () => {
     });
   }
 
-  // TODO(BE): acentos sin definir ("Martin" vs "Martín"). Cuando BE decida si el
-  // índice los normaliza, se agrega el caso con el resultado esperado.
+  test('"Martin" y "Martín" NO son duplicados (los acentos cuentan)', async ({ page, usuarioRegistrado }) => {
+    expect(usuarioRegistrado.email).toBeTruthy();
+    await page.goto(RUTAS.nuevoGrupo);
+    await agregarSinCuenta(page, "Martin");
+    await agregarSinCuenta(page, "Martín");
+
+    await expect(page.getByText(TEXTOS.errores.nombreDuplicado)).toHaveCount(0);
+    await expect(filaDe(page, "Martin")).toHaveCount(1);
+    await expect(filaDe(page, "Martín")).toHaveCount(1);
+  });
 });
 
 // Se habilita cuando existan addMember y listKnownUsers.
