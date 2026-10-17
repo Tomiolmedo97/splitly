@@ -1,1 +1,50 @@
 @import "tailwindcss";
+
+/*
+ * Tokens del sistema "Menta fresca". Los valores son los mismos que
+ * src/components/design/themes.ts (fuente de verdad del diseño); un test
+ * (src/components/ui/tokens.test.ts) verifica que no se desincronicen.
+ *
+ * Modo oscuro: clase `.dark` o atributo `data-theme="dark"` en cualquier
+ * ancestro. Las utilidades (`bg-bg`, `text-text`, `border-border`, …) leen
+ * las variables, así que cambian solas dentro del contenedor oscuro.
+ */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme {
+  --color-bg: #f7faf9;
+  --color-surface: #ffffff;
+  --color-text: #12312b;
+  --color-muted: #4b6b63;
+  --color-border: #dcebe4;
+  --color-primary: #0f766e;
+  --color-on-primary: #ffffff;
+  --color-positive: #166534;
+  --color-negative: #b91c1c;
+  /* Solo confeti y destello de "al día". Nunca texto. */
+  --color-celebrate: #fde047;
+  /* Solo logo (nunca texto). */
+  --color-logo-top: #12312b;
+  --color-logo-bottom: #0d9488;
+}
+
+.dark,
+[data-theme="dark"] {
+  --color-bg: #0b1211;
+  --color-surface: #121c1a;
+  --color-text: #ecf5f2;
+  --color-muted: #9db5ae;
+  --color-border: #1f2e2b;
+  --color-primary: #2dd4bf;
+  --color-on-primary: #0b1211;
+  --color-positive: #4ade80;
+  --color-negative: #f87171;
+  --color-celebrate: #fde047;
+  --color-logo-top: #ecf5f2;
+  --color-logo-bottom: #2dd4bf;
+  color-scheme: dark;
+}
