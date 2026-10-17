@@ -9,6 +9,7 @@
 import { z } from "zod";
 import {
   CreateGroupBodySchema,
+  UpdateGroupBodySchema,
   CreateMemberBodySchema,
   CredentialsSchema,
   IdSchema,
@@ -43,7 +44,7 @@ import {
  * - MEMBER_DUPLICATE: ya hay un invitado activo con ese nombre en el grupo, o esa
  *   persona con cuenta ya es integrante.
  * - MEMBER_HAS_BALANCE: no se puede quitar a un integrante con saldo distinto de 0.
- * - CURRENCY_LOCKED: cambio de moneda en un grupo que ya tiene gastos.
+ * - CURRENCY_LOCKED: cambio de moneda en un grupo que tiene gastos activos (no borrados).
  * - INTERNAL: error inesperado (o acción todavía sin implementar).
  *
  * Regla para TODAS las acciones con alcance de grupo (getGroup, addMember,
@@ -119,7 +120,7 @@ export interface GroupSummaryDTO {
   /** true si vos creaste el grupo: solo vos podés quitar integrantes. */
   isCreator: boolean;
   memberCount: number;
-  /** true si el grupo tiene gastos: la moneda queda bloqueada. */
+  /** true si el grupo tiene gastos ACTIVOS (deletedAt nulo): la moneda queda bloqueada. */
   hasExpenses: boolean;
   /** Tu integrante en este grupo. */
   myMemberId: string;
@@ -171,3 +172,16 @@ export type UpdateMemberInput = z.input<typeof UpdateMemberInputSchema>;
 
 export const RemoveMemberInputSchema = z.object({ groupId: IdSchema, memberId: IdSchema }).strict();
 export type RemoveMemberInput = z.input<typeof RemoveMemberInputSchema>;
+
+/** { groupId, name?, currency? } con al menos uno de name/currency. */
+export const UpdateGroupInputSchema = z
+  .object({ groupId: IdSchema })
+  .merge(UpdateGroupBodySchema.innerType())
+  .strict()
+  .refine((b) => b.name !== undefined || b.currency !== undefined, {
+    message: "Mandá al menos un campo para actualizar",
+  });
+export type UpdateGroupInput = z.input<typeof UpdateGroupInputSchema>;
+
+export const DeleteExpenseInputSchema = z.object({ expenseId: IdSchema }).strict();
+export type DeleteExpenseInput = z.input<typeof DeleteExpenseInputSchema>;

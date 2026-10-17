@@ -6,6 +6,7 @@ import type {
   GetGroupInput,
   GroupDetailDTO,
   GroupSummaryDTO,
+  UpdateGroupInput,
 } from "./contracts";
 import { notImplemented } from "./contracts";
 
@@ -52,4 +53,26 @@ export async function getGroup(
   ActionResult<GroupDetailDTO, "UNAUTHENTICATED" | "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL">
 > {
   return notImplemented("getGroup");
+}
+
+/**
+ * Edita nombre y/o moneda de un grupo. Cualquier integrante puede hacerlo.
+ *
+ * Moneda: solo se puede cambiar si el grupo NO tiene gastos activos
+ * (Expense.deletedAt IS NULL). Los gastos borrados no cuentan: quedan en la base
+ * solo para auditoría (no aparecen en la lista ni en los balances) y conservan la
+ * moneda con la que se cargaron.
+ *
+ * Errores posibles:
+ * - UNAUTHENTICATED, VALIDATION_ERROR (sin campos, nombre inválido, moneda distinta de ARS/USD).
+ * - NOT_FOUND: el grupo no existe o no sos integrante.
+ * - CURRENCY_LOCKED: cambio de moneda con gastos activos.
+ * - INTERNAL
+ */
+export async function updateGroup(
+  _input: UpdateGroupInput,
+): Promise<
+  ActionResult<GroupDetailDTO, "UNAUTHENTICATED" | "VALIDATION_ERROR" | "NOT_FOUND" | "CURRENCY_LOCKED" | "INTERNAL">
+> {
+  return notImplemented("updateGroup");
 }
