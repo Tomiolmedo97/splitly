@@ -85,14 +85,9 @@ test.describe.fixme("US1: registro, ingreso y cierre de sesión", () => {
   test("cerrar sesión vuelve al ingreso y borra la cookie de sesión", async ({ page, context }) => {
     await registrar(page);
 
-    // SUPUESTO: "Cerrar sesión" está en el menú del avatar de Mis grupos
-    // (botón o ítem de menú; el wireframe no lo define).
-    const avatar = page.getByRole("button", { name: /cuenta|perfil|menú/i });
-    if (await avatar.count()) await avatar.first().click();
-    await page
-      .getByRole("menuitem", { name: TEXTOS.general.cerrarSesion })
-      .or(page.getByRole("button", { name: TEXTOS.general.cerrarSesion }))
-      .click();
+    // SUPUESTO (FE confirma): "Cerrar sesión" es un botón visible en Mis grupos,
+    // sin menú intermedio. Si va dentro de un menú, se agrega el clic que lo abre.
+    await page.getByRole("button", { name: TEXTOS.general.cerrarSesion }).click();
 
     await expect(page).toHaveURL(rutaIngreso);
     expect(await tieneSesion(context)).toBe(false);

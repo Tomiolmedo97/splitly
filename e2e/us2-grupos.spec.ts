@@ -66,14 +66,11 @@ test.describe.fixme("US2: crear grupo", () => {
     // Solo espacios no cuenta como nombre.
     await page.getByLabel(TEXTOS.nuevoGrupo.nombre).fill("   ");
 
-    // El wireframe deshabilita "Crear grupo" sin nombre; textos.md define el error
-    // "Ponele un nombre al grupo". Se acepta cualquiera de las dos (SUPUESTO: FE confirma).
-    if (await crear.isEnabled()) {
-      await crear.click();
-      await expect(page.getByText(TEXTOS.errores.nombreGrupoVacio)).toBeVisible();
-    } else {
-      await expect(crear).toBeDisabled();
-    }
+    // SUPUESTO (FE confirma): se sigue textos.md (da9ab46). "Crear grupo" está
+    // habilitado y, al enviar sin nombre, muestra el error bajo el campo.
+    // El wireframe v0 decía "deshabilitado"; si FE elige eso, se cambia esta parte.
+    await crear.click();
+    await expect(page.getByText(TEXTOS.errores.nombreGrupoVacio)).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`${RUTAS.nuevoGrupo}$`));
   });
 });

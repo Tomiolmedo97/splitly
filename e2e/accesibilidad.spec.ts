@@ -3,7 +3,8 @@
  *
  * Criterio (docs/qa/estrategia-de-pruebas.md): cero violaciones serias o
  * críticas. Cada test crea su propio contexto con browser.newContext() (vía
- * nuevoContexto) para controlar viewport y sesión.
+ * nuevoContexto) para controlar viewport y sesión. Corre solo en el proyecto
+ * chromium (testIgnore en playwright.config.ts).
  *
  * PENDIENTE: test.describe.fixme hasta que existan las pantallas de Ingreso
  * y grupos con sus Server Actions. Se habilitan sacando el `.fixme`.

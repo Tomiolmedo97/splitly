@@ -9,7 +9,16 @@ import { BASE_URL, extraHTTPHeaders } from "./e2e/entorno";
  * - Si existe VERCEL_AUTOMATION_BYPASS_SECRET, se manda el header de bypass
  *   de la protección de despliegues de Vercel.
  * - No levanta un servidor: hay que tenerlo corriendo (pnpm dev) o apuntar a un preview.
+ * - Nunca contra la base de producción: ver docs/qa/e2e.md. Los tests crean
+ *   usuarios y grupos de verdad.
  */
+if (process.env.VERCEL_ENV === "production") {
+  throw new Error("Los e2e no corren contra producción (VERCEL_ENV=production). Ver docs/qa/e2e.md.");
+}
+
+/** axe y la pasada de 360 px corren solo en chromium (son de layout y a11y, no de motor). */
+const SOLO_CHROMIUM = /accesibilidad\.spec\.ts$/;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -27,7 +36,7 @@ export default defineConfig({
   // Navegadores definidos en docs/qa/estrategia-de-pruebas.md.
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "webkit", use: { ...devices["Desktop Safari"] } },
-    { name: "mobile", use: { ...devices["Pixel 5"] } },
+    { name: "webkit", use: { ...devices["Desktop Safari"] }, testIgnore: SOLO_CHROMIUM },
+    { name: "mobile", use: { ...devices["Pixel 5"] }, testIgnore: SOLO_CHROMIUM },
   ],
 });

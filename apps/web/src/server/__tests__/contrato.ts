@@ -11,7 +11,9 @@
  *   (no se revela si el grupo existe).
  * - FORBIDDEN es solo para un miembro que intenta algo que no tiene permitido.
  * - CURRENCY_LOCKED solo si el grupo ya tiene gastos.
- * - MEMBER_HAS_BALANCE al quitar a alguien con saldo distinto de 0.
+ * - removeMember: solo el creador quita a otro miembro, y solo con saldo 0;
+ *   con saldo distinto de 0, MEMBER_HAS_BALANCE; otro miembro, FORBIDDEN.
+ * - addMember (MVP): solo nombre o userId de alguien con un grupo en común.
  */
 import { expect } from "vitest";
 

@@ -39,7 +39,6 @@ export const TEXTOS = {
     nombre: "Nombre del grupo",
     moneda: "Moneda",
     participantes: "Participantes",
-    porEmail: "Agregar por email",
     soloNombre: "Agregar solo con nombre",
     sinCuenta: "Sin cuenta",
     boton: "Crear grupo",
@@ -50,7 +49,6 @@ export const TEXTOS = {
     credenciales: "El email o la contraseña no coinciden",
     contrasenaCorta: "La contraseña tiene que tener al menos 8 caracteres",
     nombreGrupoVacio: "Ponele un nombre al grupo",
-    miembroDuplicado: "Esa persona ya está en el grupo",
     nombreDuplicado: "Ya hay alguien con ese nombre",
     /** NOT_FOUND: también para quien no es miembro (no se filtra si el grupo existe). */
     grupoNoEncontrado: "No encontramos este grupo o no tenés acceso",

@@ -36,3 +36,7 @@ pnpm test
 ```
 
 Requiere Node >= 20 y pnpm 9.
+
+## Pruebas punta a punta
+
+Playwright en `e2e/` (`pnpm test:e2e`). Nunca se corren contra la base de producción: ver [docs/qa/e2e.md](docs/qa/e2e.md).
