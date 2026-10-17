@@ -20,7 +20,7 @@ describe("createGroup", () => {
 describe("listMyGroups", () => {
   it.todo("devuelve solo los grupos donde soy miembro");
   it.todo("no incluye grupos de otros usuarios aunque existan");
-  it.todo("incluye un grupo al que me agregaron por email");
+  it.todo("incluye un grupo al que me agregaron por userId");
   it.todo("un usuario sin grupos recibe una lista vacía");
   it.todo("sin sesión devuelve UNAUTHENTICATED");
 });

@@ -29,10 +29,18 @@ import {
  */
 async function esperarAccesoDenegado(page: Page, respuesta: Response | null, idGrupo: string) {
   const status = respuesta?.status() ?? 0;
-  const redirigio = !new URL(page.url()).pathname.endsWith(RUTAS.grupo(idGrupo));
-  const textoDeError = await page.getByText(TEXTOS.errores.grupoNoEncontrado).count();
   expect(status, "un no miembro nunca recibe 403: no se revela que el grupo existe").not.toBe(403);
-  expect(status === 404 || redirigio || textoDeError > 0, `status ${status}, url ${page.url()}`).toBe(true);
+  // Se reintenta hasta que la página se asiente (render del error o redirección).
+  await expect
+    .poll(
+      async () => {
+        const redirigio = !new URL(page.url()).pathname.endsWith(RUTAS.grupo(idGrupo));
+        const conTexto = (await page.getByText(TEXTOS.errores.grupoNoEncontrado).count()) > 0;
+        return status === 404 || redirigio || conTexto;
+      },
+      { message: `acceso denegado (status ${status})` },
+    )
+    .toBe(true);
 }
 
 // Se habilita cuando existan las Server Actions de grupos.
