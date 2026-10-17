@@ -9,14 +9,26 @@
 - El seed nunca corre en producción (ver la estrategia de pruebas).
 
 ## Seed de e2e
-Los tests de "Agregar de tus grupos" necesitan un usuario del seed (solo en el branch de Neon de e2e/preview) que comparta un grupo activo con "Bruno Seed" y "Caro Seed". Por defecto es `ana.seed@example.test`; se cambia con `E2E_SEED_EMAIL` / `E2E_SEED_PASSWORD`. Es un supuesto: BE confirma el seed.
+El seed corre solo en el branch de Neon de e2e/preview, nunca en producción.
+
+| Usuario | Qué tiene |
+|---|---|
+| `tomas@example.com` | Comparte el grupo **Bariloche** con Lucía, más el invitado sin cuenta **Martín** y 2 gastos |
+| `lucia@example.com` | Comparte **Bariloche** con Tomas |
+| `nora@example.com` | No comparte ningún grupo. Se usa para los casos `NOT_FOUND` y para ver que no aparezca "Agregar de tus grupos" |
+
+- La contraseña de los usuarios del seed sale **siempre** de la variable `E2E_SEED_PASSWORD`. No se escribe en el repo, ni en los specs, ni en el CI en texto plano: en CI va como secret. Si falta, los tests que usan el seed fallan con un mensaje claro. `--list` no la necesita.
+- Los usuarios que crean los tests (`qa+…@example.test`) usan una contraseña de prueba propia, distinta de la del seed.
+
+## Limitación conocida del MVP
+Sin invitación por email, dos personas con cuenta no pueden compartir su **primer** grupo: `addMember({ kind: "user", userId })` exige que ya compartan un grupo activo. Queda en el backlog (**US9: link de invitación**). Los e2e **no** prueban que esto funcione. El seed ya trae a Tomas y Lucía compartiendo Bariloche.
 
 ## Cómo correrlos
 ```bash
 pnpm dev                                    # en otra terminal
 pnpm test:e2e                               # contra http://localhost:3000
 E2E_BASE_URL=https://<preview>.vercel.app \
-VERCEL_AUTOMATION_BYPASS_SECRET=… pnpm test:e2e
+VERCEL_AUTOMATION_BYPASS_SECRET=… E2E_SEED_PASSWORD=… pnpm test:e2e
 pnpm test:e2e:list                          # solo lista (no necesita servidor)
 ```
 

@@ -32,6 +32,7 @@ test.describe.fixme("US2: crear grupo", () => {
     const moneda = page.getByRole("radiogroup", { name: TEXTOS.nuevoGrupo.moneda });
     await expect(moneda.getByRole("radio", { name: "ARS" })).toBeChecked();
     await expect(moneda.getByRole("radio", { name: "USD" })).not.toBeChecked();
+    await expect(page.getByText(TEXTOS.nuevoGrupo.ayudaMoneda)).toBeVisible();
 
     await page.getByLabel(TEXTOS.nuevoGrupo.nombre).fill(nombre);
     await page.getByRole("button", { name: TEXTOS.nuevoGrupo.boton, exact: true }).click();
@@ -40,6 +41,8 @@ test.describe.fixme("US2: crear grupo", () => {
     await expect(page).toHaveURL(URL_DETALLE_GRUPO);
     await expect(page.getByRole("heading", { level: 1, name: nombre })).toBeVisible();
     await expect(monedaDelGrupo(page, "ARS")).toBeVisible();
+    // Confirmado por FE: sin ?tab, la pestaña por defecto es Saldos.
+    await expect(page.getByRole("tab", { name: TEXTOS.detalle.saldos })).toHaveAttribute("aria-selected", "true");
 
     // Aparece en Mis grupos.
     await page.goto(RUTAS.grupos);
@@ -66,11 +69,12 @@ test.describe.fixme("US2: crear grupo", () => {
     // Solo espacios no cuenta como nombre.
     await page.getByLabel(TEXTOS.nuevoGrupo.nombre).fill("   ");
 
-    // SUPUESTO (FE confirma): se sigue textos.md (da9ab46). "Crear grupo" está
-    // habilitado y, al enviar sin nombre, muestra el error bajo el campo.
-    // El wireframe v0 decía "deshabilitado"; si FE elige eso, se cambia esta parte.
+    // Confirmado por FE: "Crear grupo" sigue habilitado; al enviar sin nombre muestra
+    // "Ponele un nombre al grupo" debajo del campo y deja el foco en el campo.
+    await expect(crear).toBeEnabled();
     await crear.click();
     await expect(page.getByText(TEXTOS.errores.nombreGrupoVacio)).toBeVisible();
+    await expect(page.getByLabel(TEXTOS.nuevoGrupo.nombre)).toBeFocused();
     await expect(page).toHaveURL(new RegExp(`${RUTAS.nuevoGrupo}$`));
   });
 });

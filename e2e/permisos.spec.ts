@@ -11,8 +11,11 @@
 import type { Page, Response } from "@playwright/test";
 import {
   RUTAS,
+  SEED,
   TEXTOS,
+  abrirGrupoSeed,
   crearGrupo,
+  ingresarComoSeed,
   expect,
   nombreDeGrupoUnico,
   nuevoContexto,
@@ -71,13 +74,31 @@ test.describe.fixme("Permisos: acceso a grupos ajenos", () => {
     const contextoBruno = await nuevoContexto(browser);
     const bruno = await contextoBruno.newPage();
     await registrar(bruno, nuevoUsuario("Bruno Ajeno"));
-    // SUPUESTO: la pestaña Gastos usa ?tab=gastos sobre el mismo detalle.
+    // Confirmado por FE: la pestaña Gastos es ?tab=gastos (Saldos es la de por defecto).
     const respuesta = await bruno.goto(`${RUTAS.grupo(id)}?tab=gastos`);
 
     await esperarAccesoDenegado(bruno, respuesta, id);
     await expect(bruno.getByText(nombre)).toHaveCount(0);
     await expect(bruno.getByRole("button", { name: /Agregar gasto/ })).toHaveCount(0);
     await contextoBruno.close();
+  });
+
+  test("Nora (seed, sin grupos compartidos) no puede abrir Bariloche ni lo ve en Mis grupos", async ({ browser, page }) => {
+    // Tomas abre Bariloche para obtener su id.
+    await ingresarComoSeed(page, SEED.tomas);
+    const id = await abrirGrupoSeed(page);
+
+    const contextoNora = await nuevoContexto(browser);
+    const nora = await contextoNora.newPage();
+    await ingresarComoSeed(nora, SEED.nora);
+    await expect(nora.getByText(SEED.grupo.nombre)).toHaveCount(0);
+
+    for (const ruta of [RUTAS.grupo(id), `${RUTAS.grupo(id)}?tab=gastos`]) {
+      const respuesta = await nora.goto(ruta);
+      await esperarAccesoDenegado(nora, respuesta, id);
+      await expect(nora.getByText(SEED.grupo.invitado)).toHaveCount(0);
+    }
+    await contextoNora.close();
   });
 
   test("un id de grupo inexistente se trata igual que uno ajeno", async ({ page }) => {

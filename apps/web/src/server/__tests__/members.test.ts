@@ -18,8 +18,12 @@ describe("addMember", () => {
   describe("{ kind: 'guest', name }", () => {
     it.todo("crea un Member sin cuenta (userId null, removedAt null)");
     it.todo("un nombre vacío o solo con espacios devuelve VALIDATION_ERROR con fieldErrors.name");
+    // Índice único sobre lower(trim(name)) entre los invitados activos (PR #20).
     it.todo("un nombre repetido entre los miembros sin cuenta activos devuelve MEMBER_DUPLICATE");
-    it.todo("el nombre repetido se compara sin distinguir mayúsculas ni espacios de los bordes (SUPUESTO: BE confirma)");
+    it.todo("'Martin' y después 'martin' devuelve MEMBER_DUPLICATE (sin distinguir mayúsculas)");
+    it.todo("'Martín' y después ' Martín ' devuelve MEMBER_DUPLICATE (trim)");
+    it.todo("el índice de duplicados usa lower(trim(name)) y solo cubre invitados activos (removedAt null)");
+    it.todo("acentos: 'Martin' vs 'Martín' (TODO: BE todavía no lo define; se completa el esperado cuando decida)");
     it.todo("el mismo nombre que un miembro CON cuenta se permite: el duplicado de nombre se mira solo entre los sin cuenta");
     it.todo("el nombre de un miembro sin cuenta quitado (removedAt) se puede volver a usar");
   });
@@ -57,7 +61,7 @@ describe("removeMember", () => {
   it.todo("el creador intenta quitar a un miembro con saldo distinto de 0: MEMBER_HAS_BALANCE");
   it.todo("un miembro que no es el creador intenta quitar a otro: FORBIDDEN (aunque el saldo sea 0)");
   it.todo("quien no es miembro del grupo recibe NOT_FOUND (no FORBIDDEN)");
-  it.todo("quitar a un miembro ya quitado devuelve NOT_FOUND (SUPUESTO: BE confirma)");
+  it.todo("quitar a un miembro ya quitado devuelve NOT_FOUND");
   it.todo("sin sesión devuelve UNAUTHENTICATED");
 });
 

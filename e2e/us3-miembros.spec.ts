@@ -4,7 +4,9 @@
  * Alcance del MVP: addMember acepta { kind: "guest", name } (Member sin cuenta)
  * o { kind: "user", userId } con alguien que ya comparte un grupo activo con
  * quien agrega ("Agregar de tus grupos", lista de listKnownUsers, sin emails).
- * BACKLOG: invitar por email.
+ * BACKLOG: invitar por email. Limitación conocida del MVP: dos personas con
+ * cuenta no pueden compartir su primer grupo (backlog US9, link de invitación);
+ * no se prueba que funcione. Ver docs/qa/e2e.md.
  *
  * Se verifica por la UI (Server Actions, sin API REST). Códigos de error,
  * userId null, soft delete (removedAt) y duplicados se prueban en
@@ -19,14 +21,15 @@ import {
   RUTAS,
   TEXTOS,
   URL_DETALLE_GRUPO,
-  USUARIO_SEMBRADO,
+  NOMBRE_LUCIA,
+  SEED,
   expect,
-  ingresarYEsperarMisGrupos,
+  ingresarComoSeed,
   nombreDeGrupoUnico,
   test,
 } from "./fixtures";
 
-/** SUPUESTO: la sección "Participantes" es una lista con ese nombre accesible. */
+/** Confirmado por FE: lista con nombre accesible "Participantes" (igual que su h2). */
 function participantes(page: Page) {
   return page.getByRole("list", { name: TEXTOS.nuevoGrupo.participantes });
 }
@@ -50,7 +53,7 @@ function botonDeTusGrupos(page: Page) {
   return page.getByRole("button", { name: TEXTOS.nuevoGrupo.deTusGrupos });
 }
 
-/** Buscador de "Agregar de tus grupos": label solo para lectores de pantalla. */
+/** Confirmado por FE: searchbox con label (solo lectores de pantalla) "Buscar en tus grupos". */
 function buscador(page: Page) {
   return page.getByRole("searchbox", { name: TEXTOS.nuevoGrupo.buscadorLabel });
 }
@@ -64,7 +67,7 @@ function anuncioDeResultados(page: Page) {
  * SUPUESTO (FE confirma): cada persona de la lista es un botón con su nombre
  * que la suma al grupo al tocarla.
  */
-function personaDeTusGrupos(page: Page, nombre: string) {
+function personaDeTusGrupos(page: Page, nombre: string | RegExp) {
   return page.getByRole("button", { name: nombre, exact: true });
 }
 
@@ -73,6 +76,7 @@ test.describe.fixme("US3: participantes sin cuenta (solo con nombre)", () => {
   test("quien crea el grupo figura como participante (vos)", async ({ page, usuarioRegistrado }) => {
     await page.goto(RUTAS.nuevoGrupo);
 
+    await expect(page.getByRole("heading", { level: 2, name: TEXTOS.nuevoGrupo.participantes })).toBeVisible();
     await expect(filaDe(page, `${usuarioRegistrado.nombre} (vos)`)).toBeVisible();
   });
 
@@ -107,16 +111,29 @@ test.describe.fixme("US3: participantes sin cuenta (solo con nombre)", () => {
     await expect(participantes(page).getByRole("listitem")).toHaveCount(1);
   });
 
-  test("no se puede repetir el nombre de un participante sin cuenta", async ({ page, usuarioRegistrado }) => {
-    expect(usuarioRegistrado.email).toBeTruthy();
-    // MEMBER_DUPLICATE. SUPUESTO (BE confirma): la comparación no distingue mayúsculas.
-    await page.goto(RUTAS.nuevoGrupo);
-    await agregarSinCuenta(page, "Juan");
-    await agregarSinCuenta(page, "juan");
+  // Confirmado por BE: los duplicados de invitados se comparan sin distinguir
+  // mayúsculas y sin espacios en los bordes (índice sobre lower(trim(name)) entre
+  // los invitados activos). Todos dan MEMBER_DUPLICATE.
+  for (const [primero, segundo, caso] of [
+    ["Martin", "martin", "mayúsculas"],
+    ["Martín", " Martín ", "espacios en los bordes"],
+  ] as const) {
+    test(`no se puede repetir el nombre de un invitado (${caso}: "${primero}" y "${segundo}")`, async ({
+      page,
+      usuarioRegistrado,
+    }) => {
+      expect(usuarioRegistrado.email).toBeTruthy();
+      await page.goto(RUTAS.nuevoGrupo);
+      await agregarSinCuenta(page, primero);
+      await agregarSinCuenta(page, segundo);
 
-    await expect(page.getByText(TEXTOS.errores.nombreDuplicado)).toBeVisible();
-    await expect(filaDe(page, /juan/i)).toHaveCount(1);
-  });
+      await expect(page.getByText(TEXTOS.errores.nombreDuplicado)).toBeVisible();
+      await expect(filaDe(page, new RegExp(primero.trim(), "i"))).toHaveCount(1);
+    });
+  }
+
+  // TODO(BE): acentos sin definir ("Martin" vs "Martín"). Cuando BE decida si el
+  // índice los normaliza, se agrega el caso con el resultado esperado.
 });
 
 // Se habilita cuando existan addMember y listKnownUsers.
@@ -130,9 +147,16 @@ test.describe.fixme("US3: agregar de tus grupos", () => {
     await expect(botonDeTusGrupos(page)).toHaveCount(0);
   });
 
-  test.describe("con el usuario del seed (comparte un grupo con otras personas)", () => {
+  test("Nora (sin grupos compartidos) no ve 'Agregar de tus grupos'", async ({ page }) => {
+    await ingresarComoSeed(page, SEED.nora);
+    await page.goto(RUTAS.nuevoGrupo);
+
+    await expect(botonDeTusGrupos(page)).toHaveCount(0);
+  });
+
+  test.describe("como Tomas (comparte Bariloche con Lucía y el invitado Martín)", () => {
     test.beforeEach(async ({ page }) => {
-      await ingresarYEsperarMisGrupos(page, USUARIO_SEMBRADO.email, USUARIO_SEMBRADO.contrasena);
+      await ingresarComoSeed(page, SEED.tomas);
       await page.goto(RUTAS.nuevoGrupo);
       await botonDeTusGrupos(page).click();
     });
@@ -146,10 +170,11 @@ test.describe.fixme("US3: agregar de tus grupos", () => {
     });
 
     test("la cantidad de resultados se anuncia en una región aria-live polite", async ({ page }) => {
+      // Solo Lucía: Tomas no se ve a sí mismo y Martín es invitado (sin cuenta).
       const anuncio = anuncioDeResultados(page);
-      await expect(anuncio).toHaveText(TEXTOS.nuevoGrupo.cantidad(USUARIO_SEMBRADO.contactos.length));
+      await expect(anuncio).toHaveText(TEXTOS.nuevoGrupo.cantidad(1));
 
-      await buscador(page).fill("Bruno");
+      await buscador(page).fill("Luc");
       await expect(anuncio).toHaveText(TEXTOS.nuevoGrupo.cantidad(1));
     });
 
@@ -159,25 +184,25 @@ test.describe.fixme("US3: agregar de tus grupos", () => {
       await expect(anuncioDeResultados(page)).toHaveText(TEXTOS.nuevoGrupo.sinResultados);
     });
 
-    test("la lista muestra nombres y nunca emails", async ({ page }) => {
-      for (const nombre of USUARIO_SEMBRADO.contactos) {
-        await expect(personaDeTusGrupos(page, nombre)).toBeVisible();
-      }
+    test("la lista muestra solo personas con cuenta, sin uno mismo y sin emails", async ({ page }) => {
+      await expect(personaDeTusGrupos(page, NOMBRE_LUCIA)).toBeVisible();
+      // El invitado Martín (sin cuenta) no aparece.
+      await expect(personaDeTusGrupos(page, SEED.grupo.invitado)).toHaveCount(0);
       // Ningún email (ni el propio) aparece en la pantalla.
       await expect(page.getByText(/[^\s@]+@[^\s@]+\.[^\s@]+/)).toHaveCount(0);
     });
 
-    test("elegir a alguien de tus grupos lo suma con cuenta (sin 'Sin cuenta')", async ({ page }) => {
-      await personaDeTusGrupos(page, "Bruno Seed").click();
+    test("elegir a Lucía la suma con cuenta (sin 'Sin cuenta')", async ({ page }) => {
+      await personaDeTusGrupos(page, NOMBRE_LUCIA).click();
 
-      const fila = filaDe(page, "Bruno Seed");
+      const fila = filaDe(page, NOMBRE_LUCIA);
       await expect(fila).toBeVisible();
       await expect(fila.getByText(TEXTOS.nuevoGrupo.sinCuenta)).toHaveCount(0);
 
-      await page.getByLabel(TEXTOS.nuevoGrupo.nombre).fill(nombreDeGrupoUnico("Con Bruno"));
+      await page.getByLabel(TEXTOS.nuevoGrupo.nombre).fill(nombreDeGrupoUnico("Con Lucía"));
       await page.getByRole("button", { name: TEXTOS.nuevoGrupo.boton, exact: true }).click();
       await expect(page).toHaveURL(URL_DETALLE_GRUPO);
-      await expect(page.getByText("Bruno Seed").first()).toBeVisible();
+      await expect(page.getByText(NOMBRE_LUCIA).first()).toBeVisible();
     });
   });
 });

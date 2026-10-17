@@ -46,7 +46,7 @@ Las convenciones: los montos están en centavos. Los miembros A < B < C < D est�
 | AM-04 | 10,001 | Error: más de 2 decimales |
 | AM-05 | "abc" o vacío | Error |
 | AM-06 | "1.234,56" en ARS | 123456 centavos |
-| AM-07 | Por encima del máximo definido | Error |
+| AM-07 | 99999999999 centavos ($ 999.999.999,99, el máximo por gasto) / 100000000000 centavos | El primero se acepta; el segundo da `VALIDATION_ERROR` (Zod). Columnas BigInt en la base, que llegan como `number` |
 
 ## Balances y simplificación (US5)
 | ID | Gastos | Balances | Deudas simplificadas |
@@ -72,7 +72,7 @@ Las convenciones: los montos están en centavos. Los miembros A < B < C < D est�
 | ME-02 | Agregar de nuevo a un usuario con cuenta que ya es miembro (por `userId`, desde "Agregar de tus grupos"). Los miembros sin cuenta se agregan solo por nombre (ME-01). Invitar por email queda en backlog | Error de duplicado (`MEMBER_DUPLICATE`) |
 | ME-03 | Quitar a un miembro con balance distinto de 0 | Rechazado |
 | ME-04 | Quitar a un miembro con balance 0 | Permitido |
-| PE-01 | Un usuario que no es miembro abre `/groups/:id` o la API | 403 o 404, sin filtrar datos |
+| PE-01 | Un usuario que no es miembro abre `/grupos/:id` (no hay API REST: solo Server Actions) | `NOT_FOUND` (404 en la UI, nunca 403), sin filtrar datos |
 | PE-02 | B edita un gasto creado por A | Permitido, y `updatedById` = B |
 
 ## Confeti y transición a cero
