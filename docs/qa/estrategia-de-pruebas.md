@@ -47,6 +47,6 @@ Detectar antes de producción los errores que más dañan la confianza del usuar
 El título, los pasos, el resultado esperado contra el actual, la severidad y la prioridad, el entorno (navegador, dispositivo, commit o URL del preview), la evidencia y el impacto. Los bugs se reportan como issues en GitHub con la etiqueta `bug` y su severidad.
 
 ## Pendientes a definir
-- El monto máximo por gasto (propuesta: 999.999.999,99 para evitar overflow y errores de UI).
+- El monto máximo por gasto ya está definido: $ 999.999.999,99 = 99999999999 centavos (columnas BigInt, `number` en la app). Ver AM-07.
 - El largo máximo de la descripción y del nombre de un miembro (propuesta: 100 y 50 caracteres).
 - La regla de los porcentajes: se asume piso por parte y el resto, por orden de id, igual que en la división igual. **BE Bot, por favor confirmalo.**
