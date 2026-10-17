@@ -44,8 +44,8 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Elemento | Texto |
 |---|---|
 | Título (h1) | Hola, {nombre} |
-| Resumen: a favor | Te deben |
-| Resumen: en contra | Debés |
+| Resumen: a favor | Te deben (un total por moneda, ej.: +$ 45.000 · +US$ 120) |
+| Resumen: en contra | Debés (un total por moneda; nunca se suman ARS y USD) |
 | Resumen: en cero | Estás al día |
 | Sección (h2) | Tus grupos |
 | Botón | Nuevo grupo |
@@ -63,7 +63,7 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Placeholder nombre | Ej.: Viaje a Bariloche |
 | Label moneda | Moneda |
 | Opciones | ARS · USD |
-| Ayuda moneda | No se puede cambiar después de crear el grupo |
+| Ayuda moneda | Podés cambiarla mientras el grupo no tenga gastos |
 | Sección (h2) | Participantes |
 | Vos | {nombre} (vos) |
 | Agregar por email | Agregar por email |
@@ -81,8 +81,11 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Nombre muy largo | El nombre puede tener hasta 40 caracteres |
 | Email ya agregado | Esa persona ya está en el grupo |
 | Nombre duplicado | Ya hay alguien con ese nombre. Sumale una inicial para distinguirlos |
-| Sin acceso (403) | Este grupo no es tuyo o ya no sos parte |
-| Grupo inexistente (404) | No encontramos este grupo |
+| Sin acceso (403) o inexistente (404) | No encontramos este grupo o no tenés acceso |
+| Quitar miembro con saldo | {nombre} todavía tiene saldo. Tiene que quedar al día antes de salir del grupo |
+| Confirmar quitar: título | ¿Quitar a {nombre} del grupo? |
+| Confirmar quitar: texto | Sus gastos anteriores quedan en el historial |
+| Confirmar quitar: botones | Quitar · Cancelar |
 
 ## Detalle de grupo (`/grupos/[id]`)
 | Elemento | Texto |
@@ -90,7 +93,7 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Pestañas | Saldos · Gastos |
 | Sección (h2) | Saldos |
 | Sección (h2) | Cómo quedar al día |
-| Deuda | {deudor} le debe a {acreedor} |
+| Deuda | {deudor} le debe {monto} a {acreedor} |
 | Todos al día | Están todos al día |
 | Botón flotante | Agregar gasto |
 | Vacío gastos: título | Todavía no hay gastos |
@@ -125,7 +128,8 @@ FE muestra siempre el texto según el `code`, nunca el `message` del servidor. `
 | `RATE_LIMITED` | Hiciste muchos intentos. Probá de nuevo en unos minutos |
 | `UNAUTHENTICATED` | Tu sesión terminó. Ingresá de nuevo |
 | `MEMBER_DUPLICATE` | Esa persona ya está en el grupo |
-| `FORBIDDEN` | Este grupo no es tuyo o ya no sos parte |
-| `NOT_FOUND` | No encontramos este grupo |
-| `CURRENCY_LOCKED` | La moneda no se puede cambiar después de crear el grupo |
+| `FORBIDDEN` | No encontramos este grupo o no tenés acceso |
+| `NOT_FOUND` | No encontramos este grupo o no tenés acceso |
+| `MEMBER_HAS_BALANCE` | {nombre} todavía tiene saldo. Tiene que quedar al día antes de salir del grupo |
+| `CURRENCY_LOCKED` | Este grupo ya tiene gastos, así que la moneda no se puede cambiar |
 | `INTERNAL` | Algo salió mal. Probá de nuevo |
