@@ -21,6 +21,8 @@ describe("listMyGroups", () => {
   it.todo("devuelve solo los grupos donde soy miembro");
   it.todo("no incluye grupos de otros usuarios aunque existan");
   it.todo("incluye un grupo al que me agregaron por userId");
+  it.todo("no incluye un grupo del que me quitaron (removedAt)");
+  it.todo("no incluye grupos borrados (soft delete)");
   it.todo("un usuario sin grupos recibe una lista vacía");
   it.todo("sin sesión devuelve UNAUTHENTICATED");
 });
@@ -29,11 +31,14 @@ describe("getGroup", () => {
   it.todo("un miembro recibe el grupo con su moneda y sus miembros");
   it.todo("quien no es miembro recibe NOT_FOUND (nunca FORBIDDEN: no se revela si existe)");
   it.todo("un id inexistente devuelve NOT_FOUND (igual que un grupo ajeno)");
+  it.todo("un usuario quitado del grupo (removedAt) recibe NOT_FOUND");
+  it.todo("los miembros quitados no aparecen entre los miembros activos, pero su nombre sigue en los gastos");
   it.todo("sin sesión devuelve UNAUTHENTICATED");
 });
 
 describe("cambio de moneda del grupo", () => {
   // SUPUESTO: BE define qué acción lo hace (no está en la lista del Sprint 1).
+  // CURRENCY_LOCKED solo si el grupo ya tiene gastos.
   it.todo("cambiar la moneda de un grupo sin gastos se permite");
   it.todo("cambiar la moneda de un grupo con gastos devuelve CURRENCY_LOCKED");
 });

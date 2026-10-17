@@ -8,6 +8,9 @@
 - `playwright.config.ts` se niega a correr si `VERCEL_ENV=production`.
 - El seed nunca corre en producción (ver la estrategia de pruebas).
 
+## Seed de e2e
+Los tests de "Agregar de tus grupos" necesitan un usuario del seed (solo en el branch de Neon de e2e/preview) que comparta un grupo activo con "Bruno Seed" y "Caro Seed". Por defecto es `ana.seed@example.test`; se cambia con `E2E_SEED_EMAIL` / `E2E_SEED_PASSWORD`. Es un supuesto: BE confirma el seed.
+
 ## Cómo correrlos
 ```bash
 pnpm dev                                    # en otra terminal

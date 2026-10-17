@@ -2,7 +2,7 @@
  * Contrato de las Server Actions acordado con BE (Sprint 1).
  *
  * Cada acción (register, login, logout, createGroup, listMyGroups, getGroup,
- * addMember, updateMember, removeMember) exporta su esquema Zod de entrada y
+ * addMember, updateMember, removeMember, listKnownUsers) exporta su esquema Zod de entrada y
  * devuelve ActionResult. Los tests verifican siempre error.code, nunca
  * error.message (el texto lo pone FE según docs/design/textos.md).
  *
@@ -11,9 +11,14 @@
  *   (no se revela si el grupo existe).
  * - FORBIDDEN es solo para un miembro que intenta algo que no tiene permitido.
  * - CURRENCY_LOCKED solo si el grupo ya tiene gastos.
+ * - Expense.deletedAt: un gasto borrado no cuenta para saldos pero sigue en el historial.
  * - removeMember: solo el creador quita a otro miembro, y solo con saldo 0;
  *   con saldo distinto de 0, MEMBER_HAS_BALANCE; otro miembro, FORBIDDEN.
- * - addMember (MVP): solo nombre o userId de alguien con un grupo en común.
+ * - addMember (MVP): { kind: "guest", name } o { kind: "user", userId } de alguien
+ *   con un grupo activo en común (si no, NOT_FOUND). Duplicados: MEMBER_DUPLICATE.
+ * - Member.removedAt: un miembro quitado no cuenta para permisos, listKnownUsers
+ *   ni duplicados.
+ * - listKnownUsers(): { userId, name }[], sin emails y sin uno mismo.
  */
 import { expect } from "vitest";
 
@@ -33,6 +38,12 @@ export const CODIGOS_DE_ERROR = [
 ] as const;
 
 export type CodigoDeError = (typeof CODIGOS_DE_ERROR)[number];
+
+/** Entrada de addMember. */
+export type AddMemberInput = { kind: "guest"; name: string } | { kind: "user"; userId: string };
+
+/** Item de listKnownUsers: nunca incluye email. */
+export type KnownUser = { userId: string; name: string };
 
 export type ActionResult<T> =
   | { ok: true; data: T }
