@@ -113,3 +113,18 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Reintentar | Probar de nuevo |
 | Cargando (lectores de pantalla) | Cargando |
 | Error genérico | Algo salió mal. Probá de nuevo |
+
+## Códigos de error de las Server Actions
+FE muestra siempre el texto según el `code`, nunca el `message` del servidor. `fieldErrors` se muestra debajo de cada campo con el texto de la tabla de validación.
+| `code` | Texto |
+|---|---|
+| `VALIDATION` | (por campo, ver errores de autenticación y de grupos) |
+| `EMAIL_TAKEN` | Ya hay una cuenta con este email. ¿Querés ingresar? |
+| `INVALID_CREDENTIALS` | El email o la contraseña no coinciden |
+| `PASSWORD_TOO_SHORT` | La contraseña tiene que tener al menos 8 caracteres |
+| `RATE_LIMITED` | Hiciste muchos intentos. Probá de nuevo en unos minutos |
+| `UNAUTHENTICATED` | Tu sesión terminó. Ingresá de nuevo |
+| `MEMBER_DUPLICATE` | Esa persona ya está en el grupo |
+| `FORBIDDEN` | Este grupo no es tuyo o ya no sos parte |
+| `NOT_FOUND` | No encontramos este grupo |
+| `INTERNAL` | Algo salió mal. Probá de nuevo |
