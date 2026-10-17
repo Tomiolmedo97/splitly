@@ -10,8 +10,9 @@
  * - Quien no es miembro de un grupo recibe NOT_FOUND, nunca FORBIDDEN
  *   (no se revela si el grupo existe).
  * - FORBIDDEN es solo para un miembro que intenta algo que no tiene permitido.
- * - CURRENCY_LOCKED solo si el grupo ya tiene gastos.
- * - Expense.deletedAt: un gasto borrado no cuenta para saldos pero sigue en el historial.
+ * - CURRENCY_LOCKED (updateGroup) solo si el grupo tiene gastos ACTIVOS (deletedAt null).
+ * - Expense.deletedAt: un gasto borrado no cuenta para saldos y no se muestra
+ *   (ni en Gastos ni en el historial); queda en la base solo para auditoría.
  * - removeMember: solo el creador quita a otro miembro, y solo con saldo 0;
  *   con saldo distinto de 0, MEMBER_HAS_BALANCE; otro miembro, FORBIDDEN.
  * - addMember (MVP): { kind: "guest", name } o { kind: "user", userId } de alguien

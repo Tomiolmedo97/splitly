@@ -65,7 +65,8 @@ Las convenciones: los montos est√°n en centavos. Los miembros A < B < C < D est√
 |---|---|---|
 | MO-01 | Grupo nuevo sin moneda elegida | ARS por defecto |
 | MO-02 | Cambiar de ARS a USD sin gastos | Permitido |
-| MO-03 | Cambiar la moneda con 1 gasto | Rechazado (409 o error claro) |
+| MO-03 | Cambiar la moneda con al menos 1 gasto activo (`updateGroup`) | Rechazado (`CURRENCY_LOCKED`) |
+| MO-03b | Cambiar la moneda con todos los gastos borrados (`deletedAt`) | Permitido: los borrados no cuentan |
 | MO-04 | Formato | "$ 1.234,56" en ARS, "US$ 1,234.56" en USD, con el chip de moneda visible |
 | ME-01 | Agregar a un miembro sin cuenta con un nombre repetido | Error de duplicado |
 | ME-02 | Agregar de nuevo a un usuario con cuenta que ya es miembro (por `userId`, desde "Agregar de tus grupos"). Los miembros sin cuenta se agregan solo por nombre (ME-01). Invitar por email queda en backlog | Error de duplicado (`MEMBER_DUPLICATE`) |

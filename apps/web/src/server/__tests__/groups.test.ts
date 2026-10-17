@@ -36,9 +36,17 @@ describe("getGroup", () => {
   it.todo("sin sesión devuelve UNAUTHENTICATED");
 });
 
-describe("cambio de moneda del grupo", () => {
-  // SUPUESTO: BE define qué acción lo hace (no está en la lista del Sprint 1).
-  // CURRENCY_LOCKED solo si el grupo ya tiene gastos.
+describe("updateGroup: cambio de moneda", () => {
+  // CURRENCY_LOCKED cuenta SOLO gastos activos (Expense.deletedAt null).
+  // Textos: no se fijan acá. La ayuda de moneda y el texto de CURRENCY_LOCKED los
+  // define Design en docs/design/textos.md; los tests miran solo error.code.
   it.todo("cambiar la moneda de un grupo sin gastos se permite");
-  it.todo("cambiar la moneda de un grupo con gastos devuelve CURRENCY_LOCKED");
+  it.todo("cambiar la moneda con al menos un gasto activo devuelve CURRENCY_LOCKED");
+  it.todo("con todos los gastos borrados (deletedAt) se puede volver a cambiar la moneda");
+  it.todo("borrar el último gasto activo desbloquea el cambio de moneda; cargar uno nuevo lo vuelve a bloquear");
+  it.todo("una moneda que no es ARS ni USD devuelve VALIDATION_ERROR");
+  it.todo("quien no es miembro recibe NOT_FOUND");
+  it.todo("sin sesión devuelve UNAUTHENTICATED");
+  // TODO(copy): cuando Design cierre la clave de copy de CURRENCY_LOCKED y de la
+  // ayuda de moneda, el e2e la toma de TEXTOS (e2e/fixtures.ts), sin texto fijo.
 });
