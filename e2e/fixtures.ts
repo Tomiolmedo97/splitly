@@ -18,7 +18,7 @@ import {
 import { BASE_URL, extraHTTPHeaders } from "./entorno";
 
 /**
- * Rutas de la app, según docs/design/textos.md (PR #16, commit da9ab46).
+ * Rutas de la app, según docs/design/textos.md (#16, actualizado por #19 @ b63585f).
  * No hay API REST: auth, grupos y miembros son Server Actions.
  */
 export const RUTAS = {
@@ -29,7 +29,7 @@ export const RUTAS = {
   grupo: (id: string) => `/grupos/${id}`,
 } as const;
 
-/** Textos de la UI (docs/design/textos.md, PR #16 @ da9ab46). FE muestra el texto según error.code. */
+/** Textos de la UI (docs/design/textos.md, #19 @ b63585f). FE muestra el texto según error.code. */
 export const TEXTOS = {
   ingreso: { titulo: "Ingresá a Splitly", boton: "Ingresar", linkRegistro: "Creá una" },
   registro: { titulo: "Creá tu cuenta", nombre: "Tu nombre", boton: "Crear cuenta" },
@@ -40,6 +40,12 @@ export const TEXTOS = {
     moneda: "Moneda",
     participantes: "Participantes",
     soloNombre: "Agregar solo con nombre",
+    deTusGrupos: "Agregar de tus grupos",
+    /** Label solo para lectores de pantalla del buscador de "Agregar de tus grupos". */
+    buscadorLabel: "Buscar en tus grupos",
+    buscadorPlaceholder: "Buscá por nombre",
+    sinResultados: "No hay nadie con ese nombre en tus grupos",
+    cantidad: (n: number) => (n === 1 ? "1 persona" : `${n} personas`),
     sinCuenta: "Sin cuenta",
     boton: "Crear grupo",
   },
@@ -50,6 +56,8 @@ export const TEXTOS = {
     contrasenaCorta: "La contraseña tiene que tener al menos 8 caracteres",
     nombreGrupoVacio: "Ponele un nombre al grupo",
     nombreDuplicado: "Ya hay alguien con ese nombre",
+    /** MEMBER_DUPLICATE por userId. */
+    personaYaAgregada: "Esa persona ya está en el grupo",
     /** NOT_FOUND: también para quien no es miembro (no se filtra si el grupo existe). */
     grupoNoEncontrado: "No encontramos este grupo o no tenés acceso",
   },
@@ -107,6 +115,16 @@ export async function ingresar(page: Page, email: string, contrasena: string) {
 }
 
 /**
+ * Ingresa y espera a que cargue Mis grupos (URL + h1), para no seguir con la
+ * sesión a medio crear.
+ */
+export async function ingresarYEsperarMisGrupos(page: Page, email: string, contrasena: string) {
+  await ingresar(page, email, contrasena);
+  await expect(page).toHaveURL(new RegExp(`${RUTAS.grupos}(\\?|$)`));
+  await expect(page.getByRole("heading", { level: 1, name: /^Hola, / })).toBeVisible();
+}
+
+/**
  * Crea un grupo por la UI (wireframe 5, Server Action createGroup) y devuelve su id, tomado de la URL
  * del detalle al que entra directo después de crear.
  */
@@ -152,6 +170,17 @@ export async function nuevoContexto(
     ...opciones,
   });
 }
+
+/**
+ * Usuario del seed del branch de Neon de e2e (nunca producción, ver docs/qa/e2e.md).
+ * SUPUESTO (BE confirma el seed): comparte un grupo activo con "Bruno Seed" y
+ * "Caro Seed", y nada más. Se puede sobrescribir con E2E_SEED_EMAIL / E2E_SEED_PASSWORD.
+ */
+export const USUARIO_SEMBRADO = {
+  email: process.env.E2E_SEED_EMAIL ?? "ana.seed@example.test",
+  contrasena: process.env.E2E_SEED_PASSWORD ?? CONTRASENA_VALIDA,
+  contactos: ["Bruno Seed", "Caro Seed"],
+} as const;
 
 type Fixtures = {
   /** Usuario recién registrado, con la sesión iniciada en `page`. */

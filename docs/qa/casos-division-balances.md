@@ -68,7 +68,7 @@ Las convenciones: los montos est√°n en centavos. Los miembros A < B < C < D est√
 | MO-03 | Cambiar la moneda con 1 gasto | Rechazado (409 o error claro) |
 | MO-04 | Formato | "$ 1.234,56" en ARS, "US$ 1,234.56" en USD, con el chip de moneda visible |
 | ME-01 | Agregar a un miembro sin cuenta con un nombre repetido | Error de duplicado |
-| ME-02 | Agregar por email a un usuario que ya es miembro | Error de duplicado |
+| ME-02 | Agregar de nuevo a un usuario con cuenta que ya es miembro (por `userId`, desde "Agregar de tus grupos"). Los miembros sin cuenta se agregan solo por nombre (ME-01). Invitar por email queda en backlog | Error de duplicado (`MEMBER_DUPLICATE`) |
 | ME-03 | Quitar a un miembro con balance distinto de 0 | Rechazado |
 | ME-04 | Quitar a un miembro con balance 0 | Permitido |
 | PE-01 | Un usuario que no es miembro abre `/groups/:id` o la API | 403 o 404, sin filtrar datos |
