@@ -6,7 +6,10 @@
  *
  * Es idempotente: se puede correr varias veces sin duplicar datos.
  * Usuarios de prueba (contraseña: splitly-demo-123):
- *   tomas@example.com, lucia@example.com
+ *   tomas@example.com, lucia@example.com → integrantes de "Viaje a Bariloche"
+ *     (junto con Martín, invitado sin cuenta).
+ *   nora@example.com → NO comparte ningún grupo con nadie: sirve para probar
+ *     NOT_FOUND (grupo ajeno, addMember kind "user" con alguien desconocido).
  */
 import { PrismaClient } from "@prisma/client";
 import { splitEqual, splitPercent } from "@splitly/core";
@@ -40,6 +43,13 @@ async function main() {
       where: { email: "lucia@example.com" },
       update: {},
       create: { id: "seed_user_lucia", email: "lucia@example.com", name: "Lucía", passwordHash },
+    });
+
+    // Sin grupos: para tests de NOT_FOUND.
+    await db.user.upsert({
+      where: { email: "nora@example.com" },
+      update: {},
+      create: { id: "seed_user_nora", email: "nora@example.com", name: "Nora", passwordHash },
     });
 
     // Se recrea el grupo de ejemplo entero para que el seed sea determinista.
@@ -110,7 +120,7 @@ async function main() {
       },
     });
 
-    console.log("Seed OK: 2 usuarios, 1 grupo, 3 integrantes (1 invitado), 2 gastos.");
+    console.log("Seed OK: 3 usuarios (Nora sin grupos), 1 grupo, 3 integrantes (1 invitado), 2 gastos.");
   } finally {
     await db.$disconnect();
   }

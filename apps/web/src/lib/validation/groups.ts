@@ -12,7 +12,7 @@ export type CreateGroupBody = z.infer<typeof CreateGroupBodySchema>;
 
 /**
  * PATCH /api/groups/{groupId}. Al menos un campo.
- * La moneda solo cambia si el grupo no tiene gastos (si no, 409 CURRENCY_LOCKED):
+ * La moneda solo cambia si el grupo no tiene gastos activos (si no, CURRENCY_LOCKED):
  * esa regla la aplica el servicio, no este esquema.
  */
 export const UpdateGroupBodySchema = z

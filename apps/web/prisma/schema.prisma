@@ -106,7 +106,7 @@ model VerificationToken {
 model Group {
   id          String   @id @default(cuid())
   name        String
-  // Solo se puede cambiar mientras el grupo no tenga gastos (regla de servicio → 409 CONFLICT).
+  // Solo se puede cambiar si el grupo no tiene gastos activos (regla de servicio → CURRENCY_LOCKED).
   currency    Currency @default(ARS)
   createdById String
   createdAt   DateTime @default(now())
@@ -140,18 +140,19 @@ model Member {
   expensesPaid Expense[]      @relation("ExpensePaidBy")
   splits       ExpenseSplit[]
 
-  // Unicidad de nombre SOLO entre invitados: índice único parcial
-  // "Member_groupId_name_guest_key" ON (groupId, name)
-  //   WHERE userId IS NULL AND removedAt IS NULL  (invitados activos).
-  // Prisma no puede expresarlo: está como SQL a mano en la migración inicial.
-  // OJO: si un `prisma migrate dev` futuro propone un DROP INDEX de ese índice,
-  // borrar esa línea de la migración generada.
-  //
-  // En Postgres los NULL son distintos entre sí dentro de un índice único, así que
-  // esto equivale a "único (groupId, userId) cuando userId no es nulo": un usuario
-  // aparece una sola vez por grupo (y puede llamarse igual que un invitado).
-  // Si se lo vuelve a agregar después de quitarlo, se reactiva la fila (removedAt = null).
-  @@unique([groupId, userId])
+  // Unicidad con índices únicos PARCIALES (Prisma no los modela; están como SQL a
+  // mano al final de la migración inicial):
+  // - "Member_groupId_name_guest_key": (groupId, lower(name))
+  //     WHERE userId IS NULL AND removedAt IS NULL
+  //   → nombre único entre invitados activos, sin distinguir mayúsculas
+  //     (el nombre se guarda recortado con trim antes de comparar).
+  // - "Member_groupId_userId_key": (groupId, userId)
+  //     WHERE userId IS NOT NULL AND removedAt IS NULL
+  //   → una persona con cuenta aparece una sola vez (activa) por grupo. Si se la
+  //     vuelve a agregar después de quitarla, se reactiva la fila (removedAt = null).
+  // Un invitado SÍ puede llamarse igual que alguien con cuenta.
+  // OJO: si un `prisma migrate dev` futuro propone DROP INDEX de alguno, borrar esa línea.
+  @@index([groupId])
   @@index([userId])
 }
 

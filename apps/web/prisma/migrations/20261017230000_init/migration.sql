@@ -127,10 +127,10 @@ CREATE INDEX "Session_userId_idx" ON "Session"("userId");
 CREATE INDEX "Group_createdById_idx" ON "Group"("createdById");
 
 -- CreateIndex
-CREATE INDEX "Member_userId_idx" ON "Member"("userId");
+CREATE INDEX "Member_groupId_idx" ON "Member"("groupId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Member_groupId_userId_key" ON "Member"("groupId", "userId");
+CREATE INDEX "Member_userId_idx" ON "Member"("userId");
 
 -- CreateIndex
 CREATE INDEX "Expense_groupId_date_idx" ON "Expense"("groupId", "date");
@@ -194,6 +194,9 @@ ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_amountCents_nonnegative_
 -- Puntos básicos entre 0 y 10000 (100 %), o nulo si el gasto no es por porcentaje.
 ALTER TABLE "ExpenseSplit" ADD CONSTRAINT "ExpenseSplit_basisPoints_range_check" CHECK ("basisPoints" IS NULL OR ("basisPoints" >= 0 AND "basisPoints" <= 10000));
 
--- Nombre único por grupo SOLO entre invitados activos (userId nulo y sin baja).
--- Los integrantes con cuenta se identifican por (groupId, userId).
-CREATE UNIQUE INDEX "Member_groupId_name_guest_key" ON "Member"("groupId", "name") WHERE "userId" IS NULL AND "removedAt" IS NULL;
+-- Nombre único por grupo SOLO entre invitados activos, sin distinguir mayúsculas.
+-- El servicio guarda el nombre recortado (trim) antes de comparar.
+CREATE UNIQUE INDEX "Member_groupId_name_guest_key" ON "Member"("groupId", lower("name")) WHERE "userId" IS NULL AND "removedAt" IS NULL;
+
+-- Una persona con cuenta aparece una sola vez (activa) por grupo.
+CREATE UNIQUE INDEX "Member_groupId_userId_key" ON "Member"("groupId", "userId") WHERE "userId" IS NOT NULL AND "removedAt" IS NULL;
