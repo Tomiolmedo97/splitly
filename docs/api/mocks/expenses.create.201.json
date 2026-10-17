@@ -1,0 +1,60 @@
+{
+  "expense": {
+    "id": "cm2v0expense0nafta000001",
+    "groupId": "seed_group_bariloche",
+    "description": "Nafta ida y vuelta",
+    "amountCents": 3000000,
+    "currency": "ARS",
+    "paidByMemberId": "seed_member_c_martin",
+    "splitType": "EQUAL",
+    "date": "2026-10-12",
+    "createdById": "seed_user_lucia",
+    "createdAt": "2026-10-17T23:15:00.000Z",
+    "updatedAt": "2026-10-17T23:15:00.000Z",
+    "splits": [
+      {
+        "memberId": "seed_member_a_tomas",
+        "amountCents": 1000000,
+        "basisPoints": null
+      },
+      {
+        "memberId": "seed_member_b_lucia",
+        "amountCents": 1000000,
+        "basisPoints": null
+      },
+      {
+        "memberId": "seed_member_c_martin",
+        "amountCents": 1000000,
+        "basisPoints": null
+      }
+    ]
+  },
+  "balancesBefore": [
+    {
+      "memberId": "seed_member_a_tomas",
+      "balanceCents": 4416666
+    },
+    {
+      "memberId": "seed_member_b_lucia",
+      "balanceCents": 41667
+    },
+    {
+      "memberId": "seed_member_c_martin",
+      "balanceCents": -4458333
+    }
+  ],
+  "balancesAfter": [
+    {
+      "memberId": "seed_member_a_tomas",
+      "balanceCents": 3416666
+    },
+    {
+      "memberId": "seed_member_b_lucia",
+      "balanceCents": -958333
+    },
+    {
+      "memberId": "seed_member_c_martin",
+      "balanceCents": -2458333
+    }
+  ]
+}
