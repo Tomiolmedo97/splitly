@@ -128,7 +128,7 @@ FE muestra siempre el texto según el `code`, nunca el `message` del servidor. `
 | `RATE_LIMITED` | Hiciste muchos intentos. Probá de nuevo en unos minutos |
 | `UNAUTHENTICATED` | Tu sesión terminó. Ingresá de nuevo |
 | `MEMBER_DUPLICATE` | Esa persona ya está en el grupo |
-| `FORBIDDEN` | No encontramos este grupo o no tenés acceso |
+| `FORBIDDEN` | No tenés permiso para hacer esto en el grupo |
 | `NOT_FOUND` | No encontramos este grupo o no tenés acceso |
 | `MEMBER_HAS_BALANCE` | {nombre} todavía tiene saldo. Tiene que quedar al día antes de salir del grupo |
 | `CURRENCY_LOCKED` | Este grupo ya tiene gastos, así que la moneda no se puede cambiar |
