@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "CONFLICT",
+    "message": "Member balance is not zero",
+    "details": {
+      "reason": "MEMBER_HAS_BALANCE"
+    }
+  }
+}

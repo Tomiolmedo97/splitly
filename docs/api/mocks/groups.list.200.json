@@ -1,0 +1,28 @@
+{
+  "groups": [
+    {
+      "id": "seed_group_depto",
+      "name": "Depto Palermo",
+      "currency": "USD",
+      "createdById": "seed_user_tomas",
+      "memberCount": 1,
+      "hasExpenses": false,
+      "myMemberId": "seed_member_depto_tomas",
+      "myBalanceCents": 0,
+      "createdAt": "2026-10-17T20:00:00.000Z",
+      "updatedAt": "2026-10-17T20:00:00.000Z"
+    },
+    {
+      "id": "seed_group_bariloche",
+      "name": "Viaje a Bariloche",
+      "currency": "ARS",
+      "createdById": "seed_user_tomas",
+      "memberCount": 3,
+      "hasExpenses": true,
+      "myMemberId": "seed_member_a_tomas",
+      "myBalanceCents": 4416666,
+      "createdAt": "2026-10-10T12:00:00.000Z",
+      "updatedAt": "2026-10-11T22:10:00.000Z"
+    }
+  ]
+}

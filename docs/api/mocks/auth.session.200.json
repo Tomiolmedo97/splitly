@@ -1,0 +1,8 @@
+{
+  "user": {
+    "id": "seed_user_tomas",
+    "email": "tomas@example.com",
+    "name": "Tomás"
+  },
+  "expires": "2026-11-16T23:15:00.000Z"
+}

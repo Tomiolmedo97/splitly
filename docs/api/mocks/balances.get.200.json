@@ -1,0 +1,18 @@
+{
+  "groupId": "seed_group_bariloche",
+  "currency": "ARS",
+  "balances": [
+    {
+      "memberId": "seed_member_a_tomas",
+      "balanceCents": 4416666
+    },
+    {
+      "memberId": "seed_member_b_lucia",
+      "balanceCents": 41667
+    },
+    {
+      "memberId": "seed_member_c_martin",
+      "balanceCents": -4458333
+    }
+  ]
+}

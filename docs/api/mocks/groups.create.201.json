@@ -1,0 +1,30 @@
+{
+  "group": {
+    "id": "cm2v0new0group0000000001",
+    "name": "Asado del sábado",
+    "currency": "ARS",
+    "createdById": "seed_user_tomas",
+    "memberCount": 1,
+    "hasExpenses": false,
+    "myMemberId": "cm2v0new0member000000001",
+    "myBalanceCents": 0,
+    "createdAt": "2026-10-17T23:15:00.000Z",
+    "updatedAt": "2026-10-17T23:15:00.000Z",
+    "members": [
+      {
+        "id": "cm2v0new0member000000001",
+        "groupId": "cm2v0new0group0000000001",
+        "name": "Tomás",
+        "userId": "seed_user_tomas",
+        "createdAt": "2026-10-17T23:15:00.000Z",
+        "updatedAt": "2026-10-17T23:15:00.000Z"
+      }
+    ],
+    "balances": [
+      {
+        "memberId": "cm2v0new0member000000001",
+        "balanceCents": 0
+      }
+    ]
+  }
+}

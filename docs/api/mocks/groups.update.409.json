@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "CONFLICT",
+    "message": "Currency cannot change: group has expenses",
+    "details": {
+      "reason": "CURRENCY_LOCKED"
+    }
+  }
+}

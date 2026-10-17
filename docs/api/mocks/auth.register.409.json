@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "CONFLICT",
+    "message": "Email already registered",
+    "details": {
+      "reason": "EMAIL_TAKEN"
+    }
+  }
+}

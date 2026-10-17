@@ -1,0 +1,54 @@
+{
+  "group": {
+    "id": "seed_group_bariloche",
+    "name": "Viaje a Bariloche",
+    "currency": "ARS",
+    "createdById": "seed_user_tomas",
+    "memberCount": 3,
+    "hasExpenses": true,
+    "myMemberId": "seed_member_a_tomas",
+    "myBalanceCents": 4416666,
+    "createdAt": "2026-10-10T12:00:00.000Z",
+    "updatedAt": "2026-10-11T22:10:00.000Z",
+    "members": [
+      {
+        "id": "seed_member_a_tomas",
+        "groupId": "seed_group_bariloche",
+        "name": "Tomás",
+        "userId": "seed_user_tomas",
+        "createdAt": "2026-10-10T12:00:00.000Z",
+        "updatedAt": "2026-10-10T12:00:00.000Z"
+      },
+      {
+        "id": "seed_member_b_lucia",
+        "groupId": "seed_group_bariloche",
+        "name": "Lucía",
+        "userId": "seed_user_lucia",
+        "createdAt": "2026-10-10T12:00:00.000Z",
+        "updatedAt": "2026-10-10T12:00:00.000Z"
+      },
+      {
+        "id": "seed_member_c_martin",
+        "groupId": "seed_group_bariloche",
+        "name": "Martín",
+        "userId": null,
+        "createdAt": "2026-10-10T12:00:00.000Z",
+        "updatedAt": "2026-10-10T12:00:00.000Z"
+      }
+    ],
+    "balances": [
+      {
+        "memberId": "seed_member_a_tomas",
+        "balanceCents": 4416666
+      },
+      {
+        "memberId": "seed_member_b_lucia",
+        "balanceCents": 41667
+      },
+      {
+        "memberId": "seed_member_c_martin",
+        "balanceCents": -4458333
+      }
+    ]
+  }
+}

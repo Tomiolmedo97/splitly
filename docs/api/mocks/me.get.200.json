@@ -1,0 +1,8 @@
+{
+  "user": {
+    "id": "seed_user_tomas",
+    "email": "tomas@example.com",
+    "name": "Tomás",
+    "createdAt": "2026-10-01T15:30:00.000Z"
+  }
+}

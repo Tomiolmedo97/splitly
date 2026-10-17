@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "CONFLICT",
+    "message": "Member name already exists in group",
+    "details": {
+      "reason": "MEMBER_DUPLICATE"
+    }
+  }
+}

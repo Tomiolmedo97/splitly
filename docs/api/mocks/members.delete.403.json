@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Only guest members can be removed",
+    "details": {
+      "reason": "MEMBER_LINKED_TO_USER"
+    }
+  }
+}
