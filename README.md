@@ -42,13 +42,13 @@ El esquema está en `apps/web/prisma/schema.prisma` y las migraciones en `apps/w
 ```bash
 pnpm --filter @splitly/web db:generate   # genera Prisma Client
 pnpm --filter @splitly/web db:migrate    # prisma migrate deploy (usa DATABASE_URL_UNPOOLED)
-pnpm --filter @splitly/web db:seed       # datos de ejemplo: SOLO con DATABASE_URL a localhost o en un preview
+pnpm --filter @splitly/web db:seed       # datos de ejemplo: SOLO con DATABASE_URL a localhost
 ```
 
 - `DATABASE_URL`: conexión con pooler (la usa la app). `DATABASE_URL_UNPOOLED`: conexión directa (migraciones).
 - `PROD_DB_HOST` (no secreta, en Vercel para preview): host de la base de producción de Neon, sin usuario ni contraseña.
-  `scripts/db-guard.mjs` la usa para que ni el seed ni la migración de un preview toquen esa base. Si falta, se niegan.
-  El seed también se niega sin `VERCEL_ENV` si la base no es `localhost`: **no correr `db:seed` después de `vercel env pull`**.
+  `scripts/db-guard.mjs` la usa para que la migración de un preview no toque esa base. Si falta, se saltea.
+  El seed corre solo contra `localhost`: **`db:seed` se niega después de `vercel env pull`**.
 - Para una migración nueva: editar el schema y correr
   `pnpm --filter @splitly/web exec prisma migrate dev --name <nombre>` contra una base local o un branch de Neon.
 - Plata: `BigInt` en la base (tope por gasto 99.999.999.999 centavos, con CHECK). `src/lib/cents.ts` convierte a `number` en el borde: el resto de la app nunca ve `bigint`.

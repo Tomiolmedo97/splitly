@@ -13,27 +13,30 @@ const branchUrls = {
 const local = { DATABASE_URL: "postgresql://u:p@localhost:5432/splitly" };
 
 describe("guarda del seed", () => {
-  it("corre contra localhost (local y CI), aunque falte VERCEL_ENV", () => {
+  it("corre contra localhost, 127.0.0.1 y ::1, aunque falte VERCEL_ENV", () => {
     expect(canSeed({ ...local })).toBe(true);
     expect(canSeed({ ...local, NODE_ENV: "production" })).toBe(true);
     expect(canSeed({ DATABASE_URL: "postgresql://u:p@127.0.0.1/splitly" })).toBe(true);
-  });
-  it("corre en un preview con su propia rama de Neon", () => {
-    expect(canSeed({ VERCEL_ENV: "preview", PROD_DB_HOST: PROD, ...branchUrls })).toBe(true);
+    expect(canSeed({ DATABASE_URL: "postgresql://u:p@[::1]:5432/splitly" })).toBe(true);
+    expect(canSeed({ ...local, DATABASE_URL_UNPOOLED: local.DATABASE_URL })).toBe(true);
   });
   it("se niega sin VERCEL_ENV si la base no es local (vercel env pull + db:seed)", () => {
     expect(canSeed({ ...prodUrls })).toBe(false);
     expect(canSeed({ ...branchUrls, NODE_ENV: "development" })).toBe(false);
     expect(canSeed({})).toBe(false);
+    expect(canSeed({ DATABASE_URL: "no-es-una-url" })).toBe(false);
   });
-  it("nunca corre en producción ni en development de Vercel", () => {
+  it("no se deja engañar por URLs tramposas", () => {
+    expect(canSeed({ DATABASE_URL: "postgres://u:p@db.neon.tech/x?host=localhost" })).toBe(false);
+    expect(canSeed({ DATABASE_URL: "postgres://u:p@localhost.evil.com/x" })).toBe(false);
+    expect(canSeed({ DATABASE_URL: "postgres://localhost:p@db.neon.tech/x" })).toBe(false);
+    expect(canSeed({ ...local, DATABASE_URL_UNPOOLED: prodUrls.DATABASE_URL_UNPOOLED })).toBe(false);
+  });
+  it("nunca corre en Vercel por ahora: ni production, ni development, ni preview", () => {
     expect(canSeed({ VERCEL_ENV: "production", ...local })).toBe(false);
-    expect(canSeed({ VERCEL_ENV: "production", PROD_DB_HOST: PROD, ...branchUrls })).toBe(false);
-    expect(canSeed({ VERCEL_ENV: "development", PROD_DB_HOST: PROD, ...branchUrls })).toBe(false);
-  });
-  it("en preview se niega si las URLs son las de producción o falta PROD_DB_HOST", () => {
-    expect(canSeed({ VERCEL_ENV: "preview", PROD_DB_HOST: PROD, ...prodUrls })).toBe(false);
-    expect(canSeed({ VERCEL_ENV: "preview", ...branchUrls })).toBe(false);
+    expect(canSeed({ VERCEL_ENV: "development", ...local })).toBe(false);
+    expect(canSeed({ VERCEL_ENV: "preview", PROD_DB_HOST: PROD, ...branchUrls })).toBe(false);
+    expect(canSeed({ VERCEL_ENV: "preview", ...prodUrls })).toBe(false);
   });
 });
 

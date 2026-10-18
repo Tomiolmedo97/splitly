@@ -42,15 +42,14 @@ export function isLocalDatabase(env) {
 }
 
 /**
- * El seed corre solo:
- * - con DATABASE_URL a localhost (local o CI), o
- * - con VERCEL_ENV=preview y URLs que seguro no son las de producción.
+ * El seed corre SOLO contra un Postgres en localhost (local o CI): todas las URLs
+ * presentes tienen que tener host localhost, 127.0.0.1 o ::1, leído con new URL().
+ * En preview vuelve a correr cuando PROD_DB_HOST esté cargado en Vercel.
  * En cualquier otro caso se niega, aunque falte VERCEL_ENV (p. ej. después de `vercel env pull`).
  */
 export function canSeed(env) {
-  if (env.VERCEL_ENV === "production") return false;
-  if (isLocalDatabase(env)) return true;
-  return env.VERCEL_ENV === "preview" && !pointsToProduction(env);
+  if (env.VERCEL_ENV === "production" || env.VERCEL_ENV === "development") return false;
+  return isLocalDatabase(env);
 }
 
 /** Un preview migra solo si sus URLs seguro no son las de producción. */
