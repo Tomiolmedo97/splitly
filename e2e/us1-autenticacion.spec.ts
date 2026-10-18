@@ -5,6 +5,7 @@
  * PENDIENTE: test.describe.fixme hasta que BE publique las Server Actions de
  * auth y FE las pantallas. Se habilitan sacando el `.fixme`.
  */
+import { SOLO_LECTURA } from "./guarda";
 import {
   RUTAS,
   TEXTOS,
@@ -35,7 +36,7 @@ test.describe.fixme("US1: registro, ingreso y cierre de sesión", () => {
     expect(await tieneSesion(context)).toBe(true);
   });
 
-  test("desde el ingreso se llega al registro", async ({ page }) => {
+  test("desde el ingreso se llega al registro", SOLO_LECTURA, async ({ page }) => {
     await page.goto(RUTAS.ingreso);
     await expect(page.getByRole("heading", { level: 1, name: TEXTOS.ingreso.titulo })).toBeVisible();
     await page.getByRole("link", { name: TEXTOS.ingreso.linkRegistro }).click();
@@ -115,7 +116,7 @@ test.describe.fixme("US1: registro, ingreso y cierre de sesión", () => {
     await limpio.close();
   });
 
-  test("ruta protegida sin sesión redirige al ingreso", async ({ page, context }) => {
+  test("ruta protegida sin sesión redirige al ingreso", SOLO_LECTURA, async ({ page, context }) => {
     expect(await tieneSesion(context)).toBe(false);
 
     await page.goto(RUTAS.grupos);
@@ -124,7 +125,7 @@ test.describe.fixme("US1: registro, ingreso y cierre de sesión", () => {
     await expect(page.getByRole("button", { name: TEXTOS.ingreso.boton, exact: true })).toBeVisible();
   });
 
-  test("el detalle de un grupo sin sesión también redirige al ingreso", async ({ page }) => {
+  test("el detalle de un grupo sin sesión también redirige al ingreso", SOLO_LECTURA, async ({ page }) => {
     await page.goto(RUTAS.grupo("cualquier-id"));
 
     await expect(page).toHaveURL(rutaIngreso);

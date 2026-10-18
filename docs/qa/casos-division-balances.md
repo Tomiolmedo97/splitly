@@ -46,7 +46,7 @@ Las convenciones: los montos están en centavos. Los miembros A < B < C < D est�
 | AM-04 | 10,001 | Error: más de 2 decimales |
 | AM-05 | "abc" o vacío | Error |
 | AM-06 | "1.234,56" en ARS | 123456 centavos |
-| AM-07 | 99999999999 centavos ($ 999.999.999,99, el máximo por gasto) / 100000000000 centavos | El primero se acepta; el segundo da `VALIDATION_ERROR` (Zod) con el texto "El monto máximo por gasto es {monto}" (`formatMoney` según la moneda del grupo). La base tiene además un CHECK. Columnas BigInt, que llegan como `number` |
+| AM-07 | 99999999999 centavos ($ 999.999.999,99, el máximo por gasto) / 100000000000 centavos | El primero se acepta; el segundo da `VALIDATION_ERROR` (Zod) con solo el código en `fieldErrors.amountCents`: el servidor no manda texto ni el monto ('$ 999.999.999,99'). FE arma "El monto máximo por gasto es {monto}" con `formatMoney(MAX_EXPENSE_CENTS, moneda del grupo)`: '$ 999.999.999,99' en ARS y 'US$ 999.999.999,99' en USD. La base tiene además un CHECK. Columnas BigInt, que llegan como `number` |
 
 ## Balances y simplificación (US5)
 | ID | Gastos | Balances | Deudas simplificadas |

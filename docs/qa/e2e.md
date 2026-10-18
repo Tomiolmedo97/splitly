@@ -2,12 +2,29 @@
 
 ## Dónde corren
 - **Nunca contra la base de producción.** Los e2e registran usuarios y crean grupos reales (emails `qa+…@example.test`).
-- `E2E_BASE_URL` apunta a `http://localhost:3000` (por defecto) o al **preview de Vercel del PR**. Nunca al dominio de producción.
+- `E2E_BASE_URL` apunta a `http://localhost:3000` (por defecto) o al **preview de Vercel del PR** (con `E2E_ALLOW_REMOTE=1` o `E2E_READONLY=1`). Nunca al dominio de producción: la guarda lo impide.
 - **Los e2e siembran solo un Postgres local.** El seed (`pnpm --filter @splitly/web db:seed`, `apps/web/prisma/seed.ts`) pasa por la guarda `canSeed` de `apps/web/scripts/db-guard.mjs`: corre solo con `VERCEL_ENV` sin definir y con `DATABASE_URL` (y `DATABASE_URL_UNPOOLED`, si está) apuntando a `localhost`, `127.0.0.1` o `::1`. Se niega en cualquier preview de Vercel, contra Neon y después de `vercel env pull`. Los e2e no tienen otro camino para sembrar datos: no escriben en la base directo.
 - Los specs que usan el seed (`SEED`, `ingresarComoSeed`) corren solo contra la app local (`pnpm dev`) con ese Postgres local sembrado. Contra un preview de Vercel (cuya base no tiene seed) corren solo los specs que crean sus propios datos por la UI; los del seed fallan en el login.
 - La migración del build (`apps/web/scripts/migrate-production.mjs`) se saltea sin `VERCEL_ENV`, y en un preview nunca toca la base de producción (guarda `PROD_DB_HOST`). Ni `--list` ni `pnpm build` sin `VERCEL_ENV` se conectan a una base (`postinstall` solo corre `prisma generate`, que no se conecta).
 - En local, `apps/web/.env.local` apunta a un Postgres en localhost, nunca a Neon ni a la base de producción.
-- `playwright.config.ts` se niega a correr si `VERCEL_ENV=production`.
+- `playwright.config.ts` corre la guarda de `e2e/guarda.ts` (ver abajo) antes de cualquier request.
+
+## Guarda contra producción
+`playwright.config.ts` llama a `asegurarEntornoE2E(process.env)` al cargarse, así que la guarda corre antes de lanzar un navegador o hacer un request, también con `--list`. Si se niega, Playwright termina enseguida con `Error: Guarda de e2e: …` (en castellano) y código de salida 1. Las reglas, en orden:
+
+1. **`VERCEL_ENV=production`**: se niega siempre, sea cual sea la URL.
+2. **Host de producción**: se niega siempre, ni con `E2E_ALLOW_REMOTE` ni con `E2E_READONLY`. Son `splitly-iota.vercel.app` y los alias `*.vercel.app` del deploy de producción (`splitly-tomiolmedo97s-projects.vercel.app`, `splitly-git-main-tomiolmedo97s-projects.vercel.app`, `splitly-tomiolmedo97-tomiolmedo97s-projects.vercel.app`). La lista está en `HOSTS_DE_PRODUCCION`; si se agrega un dominio de producción, se suma ahí.
+3. **Local** (`localhost`, `127.0.0.1`, `[::1]`): permitido. Es el default si no hay `E2E_BASE_URL`.
+4. **Cualquier otro host** (un preview): se niega salvo que haya opt-in explícito:
+   - `E2E_ALLOW_REMOTE=1`: corrida completa, que escribe (registra usuarios y crea grupos). Solo contra un preview.
+   - `E2E_READONLY=1`: corren solo los specs con el tag `@readonly` (`grep` en la config). Se marcan con `test("…", SOLO_LECTURA, async …)` (`SOLO_LECTURA` de `e2e/guarda.ts`) y solo si no registran, no ingresan, no crean datos y no mandan formularios.
+5. **URL que no se puede parsear** o que no es `http(s)` (por ejemplo, `splitly-iota.vercel.app` sin esquema): se niega.
+
+El host se normaliza antes de comparar: minúsculas, sin el punto final (`splitly-iota.vercel.app.`), sin puerto (`:443`) y en ASCII/punycode (IDN, puntos y letras de ancho completo). `localhost.evil.com` o `localhost@host` no cuentan como locales.
+
+Limitación: la URL única de un deploy de producción (`splitly-<hash>-tomiolmedo97s-projects.vercel.app`) no se distingue de la de un preview por el host. Por eso cualquier host remoto necesita el opt-in: antes de poner `E2E_ALLOW_REMOTE=1`, confirmá que la URL es la del preview del PR.
+
+Los tests de la guarda están en `apps/web/src/lib/e2e-guard.test.ts` (corren con `pnpm test`).
 
 ## Seed de e2e
 El mismo seed de `apps/web/prisma/seed.ts` (#20), solo en un Postgres local. Es idempotente.
@@ -32,8 +49,10 @@ pnpm --filter @splitly/web db:seed          # se niega si la base no es localhos
 pnpm dev                                    # en otra terminal
 E2E_SEED_PASSWORD=… pnpm test:e2e           # contra http://localhost:3000
 # Contra un preview (sin seed: solo los specs que crean sus datos):
-E2E_BASE_URL=https://<preview>.vercel.app \
+E2E_BASE_URL=https://<preview>.vercel.app E2E_ALLOW_REMOTE=1 \
 VERCEL_AUTOMATION_BYPASS_SECRET=… pnpm test:e2e
+# Contra un preview, solo los specs @readonly:
+E2E_BASE_URL=https://<preview>.vercel.app E2E_READONLY=1 pnpm test:e2e
 pnpm test:e2e:list                          # solo lista (no necesita servidor)
 ```
 
