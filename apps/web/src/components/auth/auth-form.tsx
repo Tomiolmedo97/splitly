@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { Info } from "lucide-react";
+import { CircleAlert, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
 import { copy } from "@/lib/copy";
-import { authFieldsByMode, createStubAuthAction, initialAuthState, type AuthMode } from "@/lib/auth-action";
+import {
+  authFieldsByMode,
+  createStubAuthAction,
+  focusTargetAfterSubmit,
+  initialAuthState,
+  type AuthMode,
+} from "@/lib/auth-action";
+import { errorText } from "@/lib/error-copy";
 import { fieldErrorCopy, PASSWORD_MIN_LENGTH, type AuthField } from "@/lib/auth-validation";
 
 const linkClass =
@@ -26,10 +33,12 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const refs = useRef<Partial<Record<AuthField, HTMLInputElement | null>>>({});
   const t = mode === "login" ? copy.login : copy.register;
 
+  // Cada acción devuelve un estado nuevo: después de un envío fallido, foco al primer campo con error
+  // o, si el error es del formulario (p. ej. INVALID_CREDENTIALS), a la contraseña. Sin autoFocus.
   useEffect(() => {
     setEdited({});
-    const firstInvalid = fields.find((f) => state.fieldErrors[f]);
-    if (firstInvalid) refs.current[firstInvalid]?.focus();
+    const target = focusTargetAfterSubmit(state, fields);
+    if (target) refs.current[target]?.focus();
   }, [state, fields]);
 
   const errorFor = (field: AuthField) => {
@@ -85,6 +94,13 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           onChange={() => markEdited("password")}
         />
       </div>
+
+      {state.status === "error" && state.formError && (
+        <p role="alert" className="flex items-start gap-2 text-sm text-negative">
+          <CircleAlert size={16} aria-hidden className="mt-0.5 shrink-0" />
+          {errorText({ code: state.formError })}
+        </p>
+      )}
 
       <Button type="submit" className="w-full sm:h-12" loading={isPending}>
         {isPending ? t.submitting : t.submit}
