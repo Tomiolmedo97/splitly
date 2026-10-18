@@ -15,6 +15,7 @@ import {
   type AuthMode,
 } from "@/lib/auth-action";
 import { errorText } from "@/lib/error-copy";
+import { LIMITS } from "@/lib/validation/limits";
 import { fieldErrorCopy, PASSWORD_MIN_LENGTH, type AuthField } from "@/lib/auth-validation";
 
 const linkClass =
@@ -70,6 +71,7 @@ export function AuthForm({ mode, action }: { mode: AuthMode; action: AuthFormAct
           <TextField
             ref={bindRef("name")}
             name="name"
+            maxLength={LIMITS.userName}
             label={copy.register.nameLabel}
             placeholder={copy.register.namePlaceholder}
             autoComplete="name"
@@ -82,6 +84,7 @@ export function AuthForm({ mode, action }: { mode: AuthMode; action: AuthFormAct
         <TextField
           ref={bindRef("email")}
           name="email"
+          maxLength={LIMITS.email}
           type="email"
           inputMode="email"
           label={t.emailLabel}
@@ -95,6 +98,7 @@ export function AuthForm({ mode, action }: { mode: AuthMode; action: AuthFormAct
         <TextField
           ref={bindRef("password")}
           name="password"
+          maxLength={LIMITS.passwordMax}
           type="password"
           label={t.passwordLabel}
           hint={mode === "register" ? copy.register.passwordHint : undefined}

@@ -73,6 +73,12 @@ describe("loginForm", () => {
     expect(state).toEqual({ values: { email: "ana@ejemplo.com" }, fieldErrors: {}, formError: "INVALID_CREDENTIALS" });
   });
 
+  it("contraseña de 129 caracteres: el servidor la rechaza y la UI ve el genérico INVALID_CREDENTIALS", async () => {
+    const state = await loginForm(initialAuthState, form({ email: "ana@ejemplo.com", password: "x".repeat(129) }));
+    expect(state).toEqual({ values: { email: "ana@ejemplo.com" }, fieldErrors: {}, formError: "INVALID_CREDENTIALS" });
+    expect(db.user.findUnique).not.toHaveBeenCalled();
+  });
+
   it("RATE_LIMITED es error de formulario", async () => {
     consumeRateLimit.mockResolvedValue(false);
     const state = await loginForm(initialAuthState, form({ email: "ana@ejemplo.com", password: "12345678" }));
@@ -108,9 +114,14 @@ describe("registerForm", () => {
     expect(state.values).not.toHaveProperty("password");
   });
 
-  it("nombre demasiado largo (VALIDATION_ERROR del servidor) queda en el campo", async () => {
-    const state = await registerForm(initialAuthState, form({ name: "A".repeat(51), email: "ana@ejemplo.com", password: "12345678" }));
-    expect(state.fieldErrors).toEqual({ name: "REQUIRED" });
+  it("51 caracteres de nombre y 129 de contraseña: códigos de largo máximo, sin tocar la base", async () => {
+    const state = await registerForm(initialAuthState, form({ name: "A".repeat(51), email: "ana@ejemplo.com", password: "x".repeat(129) }));
+    expect(state).toEqual({
+      values: { name: "A".repeat(51), email: "ana@ejemplo.com" },
+      fieldErrors: { name: "NAME_TOO_LONG", password: "PASSWORD_TOO_LONG" },
+      formError: null,
+    });
+    expect(db.user.findUnique).not.toHaveBeenCalled();
   });
 
   it("cuenta nueva: inicia sesión y redirige a /grupos", async () => {

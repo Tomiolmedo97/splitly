@@ -35,6 +35,22 @@ describe("validateAuth", () => {
     expect(validateAuth({ email: "ana@ejemplo.com", password: "123" }, "login")).toEqual({});
     expect(validateAuth({ email: "ana@ejemplo.com", password: "" }, "login")).toEqual({ password: "REQUIRED" });
   });
+  it("largo máximo: 51 de nombre, 255 de email y 129 de contraseña (registro), con texto propio", () => {
+    const email255 = `${"a".repeat(243)}@ejemplo.com`;
+    expect(email255).toHaveLength(255);
+    expect(validateAuth({ name: "A".repeat(51), email: email255, password: "x".repeat(129) })).toEqual({
+      name: "NAME_TOO_LONG",
+      email: "EMAIL_TOO_LONG",
+      password: "PASSWORD_TOO_LONG",
+    });
+    expect(validateAuth({ name: "A".repeat(50), email: `${"a".repeat(242)}@ejemplo.com`, password: "x".repeat(128) })).toEqual({});
+    expect(fieldErrorCopy.NAME_TOO_LONG).toBe("Tu nombre puede tener hasta 50 caracteres");
+    expect(fieldErrorCopy.EMAIL_TOO_LONG).toBe("El email puede tener hasta 254 caracteres");
+    expect(fieldErrorCopy.PASSWORD_TOO_LONG).toBe("La contraseña puede tener hasta 128 caracteres");
+  });
+  it("login: 129 caracteres de contraseña no dan pista por campo", () => {
+    expect(validateAuth({ email: "ana@ejemplo.com", password: "x".repeat(129) }, "login")).toEqual({});
+  });
   it("EMAIL_TAKEN tiene el texto de textos.md", () => {
     expect(fieldErrorCopy.EMAIL_TAKEN).toBe("Ya hay una cuenta con este email. ¿Querés ingresar?");
   });
@@ -81,6 +97,15 @@ describe("authStateFromResult (respuesta de register/login de BE)", () => {
     expect(state.fieldErrors).toEqual({ name: "REQUIRED", email: "INVALID_EMAIL", password: "PASSWORD_TOO_SHORT" });
   });
 
+  it("VALIDATION_ERROR por largo máximo → su propio código (registro)", () => {
+    const state = authStateFromResult(
+      "register",
+      { name: "A".repeat(51), email: `${"a".repeat(243)}@ejemplo.com`, password: "x".repeat(129) },
+      err({ code: "VALIDATION_ERROR" }, { name: ["too_big"], email: ["too_big"], password: ["too_big"] }) as never,
+    );
+    expect(state.fieldErrors).toEqual({ name: "NAME_TOO_LONG", email: "EMAIL_TOO_LONG", password: "PASSWORD_TOO_LONG" });
+  });
+
   it("login: EMAIL_TAKEN o una contraseña rechazada nunca salen por campo", () => {
     expect(authStateFromResult("login", values, err({ code: "EMAIL_TAKEN" }) as never)).toMatchObject({
       fieldErrors: {},
@@ -95,6 +120,8 @@ describe("authStateFromResult (respuesta de register/login de BE)", () => {
     const leaky: AuthFormState = { values: { email: "ana@ejemplo.com" }, fieldErrors: { email: "EMAIL_TAKEN" }, formError: null };
     expect(sanitizeAuthState("login", leaky)).toEqual({ values: { email: "ana@ejemplo.com" }, fieldErrors: {}, formError: "INVALID_CREDENTIALS" });
     expect(sanitizeAuthState("register", leaky)).toBe(leaky);
+    const long: AuthFormState = { values: {}, fieldErrors: { password: "PASSWORD_TOO_LONG" }, formError: null };
+    expect(sanitizeAuthState("login", long)).toEqual({ values: {}, fieldErrors: {}, formError: "INVALID_CREDENTIALS" });
   });
 });
 
@@ -107,6 +134,7 @@ describe("foco después de un envío fallido", () => {
     expect(focusTargetAfterSubmit({ ...base, fieldErrors: { password: "PASSWORD_TOO_SHORT", email: "INVALID_EMAIL" } }, register)).toBe("email");
     expect(focusTargetAfterSubmit({ ...base, fieldErrors: { name: "REQUIRED", password: "REQUIRED" } }, register)).toBe("name");
     expect(focusTargetAfterSubmit({ ...base, fieldErrors: { password: "REQUIRED" } }, login)).toBe("password");
+    expect(focusTargetAfterSubmit({ ...base, fieldErrors: { name: "NAME_TOO_LONG", password: "PASSWORD_TOO_LONG" } }, register)).toBe("name");
   });
 
   it("error de formulario (INVALID_CREDENTIALS, RATE_LIMITED): va a la contraseña", () => {

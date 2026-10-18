@@ -2,6 +2,8 @@
  * Textos de la UI. Fuente: docs/design/textos.md (PR #16, mergeado en main como 076ed72).
  * No editar los strings acá sin actualizar ese documento.
  */
+import { LIMITS } from "./validation/limits";
+
 export const copy = {
   login: {
     title: "Ingresá a Splitly",
@@ -33,6 +35,10 @@ export const copy = {
     required: "Completá este campo",
     invalidEmail: "Revisá el email, parece que falta algo",
     passwordTooShort: "La contraseña tiene que tener al menos 8 caracteres",
+    /** Largo máximo (Design; mismo patrón que "El nombre puede tener hasta 40 caracteres" de textos.md). */
+    nameTooLong: `Tu nombre puede tener hasta ${LIMITS.userName} caracteres`,
+    emailTooLong: `El email puede tener hasta ${LIMITS.email} caracteres`,
+    passwordTooLong: `La contraseña puede tener hasta ${LIMITS.passwordMax} caracteres`,
     emailTaken: "Ya hay una cuenta con este email. ¿Querés ingresar?",
     invalidCredentials: "El email o la contraseña no coinciden",
     rateLimited: "Hiciste muchos intentos. Probá de nuevo en unos minutos",

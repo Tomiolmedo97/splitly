@@ -8,6 +8,7 @@ import {
   type AuthValues,
 } from "./auth-validation";
 import type { ErrorCode } from "./error-copy";
+import { LIMITS } from "./validation/limits";
 
 export type { AuthMode };
 
@@ -48,12 +49,20 @@ export function invalidAuthState(mode: AuthMode, values: AuthValues): AuthFormSt
   return { values: withoutPassword(values), fieldErrors, formError: null };
 }
 
-/** Código por campo para un VALIDATION_ERROR de zod (ignora los mensajes; decide por el valor enviado). */
+/**
+ * Código por campo para un VALIDATION_ERROR de zod (ignora los mensajes; decide por el valor enviado).
+ * `null` = sin pista por campo (en login, una contraseña rechazada termina en INVALID_CREDENTIALS).
+ */
 function codeForInvalidField(mode: AuthMode, field: AuthField, value: string): AuthFieldErrorCode | null {
-  // En login, una contraseña no vacía rechazada no tiene pista por campo: cae en INVALID_CREDENTIALS.
-  if (field === "password") return value === "" ? "REQUIRED" : mode === "register" ? "PASSWORD_TOO_SHORT" : null;
-  if (field === "email") return value.trim() === "" ? "REQUIRED" : "INVALID_EMAIL";
-  return "REQUIRED";
+  if (field === "password") {
+    if (value === "") return "REQUIRED";
+    if (mode === "login") return null;
+    return value.length > LIMITS.passwordMax ? "PASSWORD_TOO_LONG" : "PASSWORD_TOO_SHORT";
+  }
+  const trimmed = value.trim();
+  if (trimmed === "") return "REQUIRED";
+  if (field === "email") return trimmed.length > LIMITS.email ? "EMAIL_TOO_LONG" : "INVALID_EMAIL";
+  return trimmed.length > LIMITS.userName ? "NAME_TOO_LONG" : "REQUIRED";
 }
 
 /**
@@ -84,11 +93,16 @@ export function authStateFromResult(mode: AuthMode, values: AuthValues, result: 
   return sanitizeAuthState(mode, { ...base, formError: code });
 }
 
-const LOGIN_FIELD_CODES: readonly AuthFieldErrorCode[] = ["REQUIRED", "INVALID_EMAIL"];
+/** Únicos errores por campo que puede mostrar el login: de formato, nunca sobre la cuenta. */
+const LOGIN_FIELD_CODES: Partial<Record<AuthField, readonly AuthFieldErrorCode[]>> = {
+  email: ["REQUIRED", "INVALID_EMAIL", "EMAIL_TOO_LONG"],
+  password: ["REQUIRED"],
+};
 
 /**
- * Defensa en la UI: en login solo se muestran errores por campo de formato (vacío, email mal escrito).
- * Cualquier otro código por campo (p. ej. EMAIL_TAKEN o PASSWORD_TOO_SHORT) se descarta y, si no
+ * Defensa en la UI: en login solo se muestran errores por campo de formato (vacío, email mal escrito
+ * o demasiado largo; la contraseña, solo vacía). Cualquier otro código por campo (p. ej. EMAIL_TAKEN,
+ * PASSWORD_TOO_SHORT o PASSWORD_TOO_LONG) se descarta y, si no
  * queda ningún error, se muestra el genérico INVALID_CREDENTIALS: nada distingue "no existe el mail"
  * de "contraseña incorrecta". En login, EMAIL_TAKEN/PASSWORD_TOO_SHORT como formError también pasan
  * a INVALID_CREDENTIALS.
@@ -98,7 +112,7 @@ export function sanitizeAuthState(mode: AuthMode, state: AuthFormState): AuthFor
   const fieldErrors: AuthFieldErrors = {};
   let dropped = false;
   for (const [field, code] of Object.entries(state.fieldErrors) as [AuthField, AuthFieldErrorCode][]) {
-    if (field !== "name" && LOGIN_FIELD_CODES.includes(code)) fieldErrors[field] = code;
+    if (LOGIN_FIELD_CODES[field]?.includes(code)) fieldErrors[field] = code;
     else dropped = true;
   }
   let formError = state.formError;
