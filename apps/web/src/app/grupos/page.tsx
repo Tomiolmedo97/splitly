@@ -22,11 +22,16 @@ export default async function GruposPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-6 sm:py-10">
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="min-w-0 text-[28px] font-semibold tracking-tight [overflow-wrap:anywhere]">
+      {/*
+        Si el saludo y "Cerrar sesión" no entran en una fila, el botón baja a la línea siguiente
+        (alineado a la derecha) en vez de angostar el h1. El botón reserva el ancho de
+        "Cerrando sesión…", así que cargar no cambia el layout.
+      */}
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <h1 className="min-w-0 max-w-full text-[28px] font-semibold tracking-tight [overflow-wrap:anywhere]">
           {copy.myGroups.greeting.replace("{nombre}", nombre)}
         </h1>
-        <form action={logoutForm} className="shrink-0">
+        <form action={logoutForm} className="ml-auto shrink-0">
           <LogoutButton />
         </form>
       </header>
