@@ -145,7 +145,10 @@ export async function logout(): Promise<ActionResult<null, "INTERNAL">> {
 
 export async function loginForm(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const values = readAuthValues("login", formData);
-  const fieldErrors = validateAuth(values);
+  // En login el largo mínimo no aplica: solo vacío o email mal escrito. Una contraseña corta
+  // va a login() y termina en INVALID_CREDENTIALS, igual que cualquier contraseña incorrecta.
+  const { password: passwordError, ...fieldErrors } = validateAuth(values);
+  if (passwordError === "REQUIRED") fieldErrors.password = "REQUIRED";
   if (Object.keys(fieldErrors).length > 0) return { status: "invalid", values: safeValues(values), fieldErrors };
 
   const result = await login({ email: values.email ?? "", password: values.password ?? "" });
@@ -162,9 +165,14 @@ export async function registerForm(_prev: AuthFormState, formData: FormData): Pr
   const created = await register(input);
   if (!created.ok) return failureToFormState(created, values);
 
-  // La cuenta ya existe: iniciamos sesión con las mismas credenciales.
-  const session = await login({ email: input.email, password: input.password });
-  if (!session.ok) return failureToFormState(session, values);
+  // Cuenta recién creada: sesión directa, sin un segundo login (no gasta el rate limit
+  // de login ni vuelve a verificar el hash).
+  try {
+    await createSession(created.data.id);
+  } catch (error) {
+    logError("registerForm.createSession", error);
+    return failureToFormState({ ok: false, error: { code: "INTERNAL", message: "No se pudo iniciar sesión." } }, values);
+  }
   redirect(AFTER_AUTH_PATH);
 }
 
