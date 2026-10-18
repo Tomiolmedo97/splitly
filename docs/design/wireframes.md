@@ -11,7 +11,7 @@ Las cuentas claras entre amigos   16/400 muted
 Email        ______________________
 Contraseña   ______________ [ver]
 [ Ingresar ]               botón primario, alto 48
-¿No tenés cuenta? Crear cuenta    14, link primario #0F766E
+¿No tenés cuenta? Creá una        14, link primario #0F766E
 Error inline bajo el campo, en negativo
 ```
 Animación: el logo se arma partiendo la S (300 ms, se omite con reduced-motion).
@@ -53,19 +53,19 @@ Flechas animadas al recalcular deudas (reacomodo 250 ms). Al guardar un gasto qu
 ```
 [ Saldos ] [ Gastos ]
 Hoy
-  Cena          pagó Ana    $ 12.000
+  Cena          pagó Ana    $ 12.000,00
 Ayer
-  Nafta         pagó Juan   $ 30.000
+  Nafta         pagó Juan   $ 30.000,00
 ```
 Del más nuevo al más viejo, agrupado por día. Los gastos borrados no se muestran. Tocar una fila abre el detalle:
 ```
 ←  Cena                         [ Editar ]
-$ 12.000                         40/600
+$ 12.000,00                      40/600
 Pagó Ana · 14 oct
 División (igual)
-  Ana   $ 4.000
-  Juan  $ 4.000
-  Sofi  $ 4.000
+  Ana   $ 4.000,00
+  Juan  $ 4.000,00
+  Sofi  $ 4.000,00
 [ Borrar gasto ]                 texto negativo, pide confirmación
 ```
 Editar reutiliza la pantalla de Nuevo gasto con los datos cargados.
@@ -138,7 +138,7 @@ Error: texto negativo + acción para reintentar. Foco visible: anillo de 2 px pr
 ```
 ←  Saldar
 Juan le paga a Ana
-$ 15.000                          40/600
+$ 15.000,00                       40/600
 Método  ( Efectivo ) ( Transferencia )
 Nota (opcional) ___________________
 [ Confirmar pago ]                primario, alto 48

@@ -70,7 +70,7 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Sección (h2) | Participantes |
 | Vos | {nombre} (vos) |
 | Agregar de tus grupos | Agregar de tus grupos |
-| Buscador (label sr-only) | Buscar en tus grupos |
+| Buscador (label sr-only, `role="searchbox"`) | Buscar en tus grupos |
 | Buscador (placeholder) | Buscá por nombre |
 | Cantidad de resultados (`aria-live="polite"`) | {n} personas · 1 persona |
 | Lista vacía en la búsqueda | No hay nadie con ese nombre en tus grupos |
