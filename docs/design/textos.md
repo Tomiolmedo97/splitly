@@ -14,6 +14,7 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Botón principal | Ingresar |
 | Botón cargando | Ingresando… |
 | Link a registro | ¿No tenés cuenta? Creá una |
+| Aviso (próximamente) | Muy pronto vas a poder ingresar. Por ahora no guardamos tus datos |
 
 ## Registro (`/registro`)
 | Elemento | Texto |
@@ -44,13 +45,15 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Elemento | Texto |
 |---|---|
 | Título (h1) | Hola, {nombre} |
-| Resumen: a favor | Te deben (un total por moneda, ej.: +$ 45.000 · +US$ 120) |
+| Header: cerrar sesión | Cerrar sesión (botón de texto directo; el menú de avatar queda para más adelante) |
+| Tarjeta resumen: label | Tu saldo |
+| Resumen: a favor | Te deben (un total por moneda, ej.: +$ 45.000,00 · +US$ 120,00) |
 | Resumen: en contra | Debés (un total por moneda; nunca se suman ARS y USD) |
 | Resumen: en cero | Estás al día |
 | Sección (h2) | Tus grupos |
 | Botón | Nuevo grupo |
-| Detalle de fila | {n} personas · {saldo} |
-| Fila sin saldo | Al día |
+| Detalle de fila | {n} personas · {saldo} (con 1: 1 persona) |
+| Fila sin saldo | Al día (solo si el saldo es exactamente 0) |
 | Vacío: título | Todavía no tenés grupos |
 | Vacío: texto | Creá uno para el próximo viaje, la casa o el asado |
 | Vacío: botón | Crear mi primer grupo |
@@ -67,10 +70,14 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Sección (h2) | Participantes |
 | Vos | {nombre} (vos) |
 | Agregar de tus grupos | Agregar de tus grupos |
+| Buscador (label sr-only, `role="searchbox"`) | Buscar en tus grupos |
 | Buscador (placeholder) | Buscá por nombre |
+| Cantidad de resultados (`aria-live="polite"`) | {n} personas · 1 persona |
 | Lista vacía en la búsqueda | No hay nadie con ese nombre en tus grupos |
 | Agregar solo con nombre | Agregar solo con nombre |
-| Etiqueta | Sin cuenta |
+| Agregar solo con nombre: label del campo | Nombre |
+| Agregar solo con nombre: botón | Agregar (Enter también agrega) |
+| Etiqueta | sin cuenta |
 | Ayuda sin cuenta | Para quien no usa Splitly. Igual aparece en los gastos y saldos |
 | Quitar (aria-label) | Quitar a {nombre} |
 | Botón principal | Crear grupo |
@@ -79,11 +86,13 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 ## Errores de grupos y participantes
 | Caso | Texto |
 |---|---|
-| Nombre vacío | Ponele un nombre al grupo |
+| Nombre vacío | Ponele un nombre al grupo (inline; el foco va al campo y Crear grupo sigue habilitado) |
+| Agregar solo con nombre vacío | Completá este campo |
 | Nombre muy largo | El nombre puede tener hasta 40 caracteres |
 | Persona ya agregada | Esa persona ya está en el grupo |
 | Nombre duplicado | Ya hay alguien con ese nombre. Sumale una inicial para distinguirlos |
-| Sin acceso (403) o inexistente (404) | No encontramos este grupo o no tenés acceso |
+| Sin acceso o inexistente (404 dentro de la app, la URL no cambia) | No encontramos este grupo o no tenés acceso |
+| 404: botón | Volver a mis grupos |
 | Quitar miembro con saldo | {nombre} todavía tiene saldo. Tiene que quedar al día antes de salir del grupo |
 | Confirmar quitar: título | ¿Quitar a {nombre} del grupo? |
 | Confirmar quitar: texto | Sus gastos anteriores quedan en el historial |
@@ -100,6 +109,19 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Botón flotante | Agregar gasto |
 | Vacío gastos: título | Todavía no hay gastos |
 | Vacío gastos: texto | Cargá el primero y Splitly hace las cuentas |
+
+## Errores de gastos
+| Caso | Texto |
+|---|---|
+| Monto máximo superado | El monto máximo por gasto es {monto} |
+
+`{monto}` = `formatMoney(999.999.999,99, moneda del grupo)`. El texto se arma en la action; nunca se muestra crudo el mensaje del servidor.
+
+## Formato de montos
+- `es-AR` para las dos monedas: punto de miles, coma decimal, dos decimales.
+- El signo va pegado a la moneda: `+US$ 4.500,00`, `−$ 1.500,00`. El menos es `−` (U+2212), no el guion.
+- Espacio duro (no separable) solo entre la moneda y el número.
+- "Al día" solo cuando el saldo es exactamente 0.
 
 ## Confirmaciones y avisos (toasts)
 | Caso | Texto |
