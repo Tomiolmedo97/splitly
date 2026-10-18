@@ -18,6 +18,8 @@ const isProd = process.env.NODE_ENV === "production";
 /** En producción, prefijo __Host-: obliga Secure, Path=/ y sin Domain (no la pisa un subdominio). */
 export const SESSION_COOKIE = isProd ? "__Host-splitly.session" : "splitly.session";
 
+const COOKIE_ATTRIBUTES = { httpOnly: true, secure: isProd, sameSite: "lax", path: "/" } as const;
+
 export type SessionUser = { id: string; email: string; name: string };
 
 export function hashSessionToken(token: string): string {
@@ -30,13 +32,7 @@ export async function createSession(userId: string): Promise<void> {
   await db.session.create({ data: { sessionToken: hashSessionToken(token), userId, expires } });
   // Limpieza oportunista de sesiones vencidas de esta persona.
   await db.session.deleteMany({ where: { userId, expires: { lt: new Date() } } });
-  (await cookies()).set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: "lax",
-    path: "/",
-    expires,
-  });
+  (await cookies()).set(SESSION_COOKIE, token, { ...COOKIE_ATTRIBUTES, expires });
 }
 
 /** Usuario de la sesión actual, o null si no hay cookie, no existe o venció. */
@@ -56,5 +52,7 @@ export async function destroySession(): Promise<void> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (token) await db.session.deleteMany({ where: { sessionToken: hashSessionToken(token) } });
-  store.delete(SESSION_COOKIE);
+  // Mismos atributos que al crearla: un navegador ignora un Set-Cookie para __Host- sin Secure,
+  // y la cookie vieja quedaría guardada (aunque ya no sirva porque la fila se borró).
+  store.set(SESSION_COOKIE, "", { ...COOKIE_ATTRIBUTES, maxAge: 0 });
 }
