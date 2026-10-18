@@ -75,5 +75,7 @@ export const copy = {
     genericError: "Algo salió mal. Probá de nuevo",
     sessionExpired: "Tu sesión terminó. Ingresá de nuevo",
     logout: "Cerrar sesión",
+    /** Botón "Cerrar sesión" mientras se envía (no figura en textos.md; pedido por Design). */
+    loggingOut: "Cerrando sesión…",
   },
 } as const;

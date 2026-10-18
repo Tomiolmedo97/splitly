@@ -23,7 +23,7 @@ const linkClass =
 
 /**
  * Formulario de ingreso/registro con useActionState. `action` es la Server Action
- * (`loginForm`/`registerForm` de @/server/actions/auth-forms; hoy un stub).
+ * real de BE (`loginForm`/`registerForm`, reexportadas en @/server/actions/auth-forms).
  * Los textos salen siempre de los códigos del estado, nunca del `message` del servidor.
  */
 export function AuthForm({ mode, action }: { mode: AuthMode; action: AuthFormAction }) {
