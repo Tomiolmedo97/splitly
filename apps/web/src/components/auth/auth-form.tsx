@@ -8,9 +8,10 @@ import { TextField } from "@/components/ui/text-field";
 import { copy } from "@/lib/copy";
 import {
   authFieldsByMode,
-  createStubAuthAction,
   focusTargetAfterSubmit,
   initialAuthState,
+  sanitizeAuthState,
+  type AuthFormAction,
   type AuthMode,
 } from "@/lib/auth-action";
 import { errorText } from "@/lib/error-copy";
@@ -21,13 +22,15 @@ const linkClass =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 /**
- * Formulario visual de ingreso/registro con useActionState. Por ahora usa una acción stub
- * (valida y no guarda nada): al enviar muestra un aviso de "próximamente" que no bloquea el formulario.
+ * Formulario de ingreso/registro con useActionState. `action` es la Server Action
+ * (`loginForm`/`registerForm` de @/server/actions/auth-forms; hoy un stub).
+ * Los textos salen siempre de los códigos del estado, nunca del `message` del servidor.
  */
-export function AuthForm({ mode }: { mode: AuthMode }) {
+export function AuthForm({ mode, action }: { mode: AuthMode; action: AuthFormAction }) {
   const fields = authFieldsByMode[mode];
-  const action = useMemo(() => createStubAuthAction(mode), [mode]);
-  const [state, formAction, isPending] = useActionState(action, initialAuthState);
+  const [rawState, formAction, isPending] = useActionState(action, initialAuthState);
+  // En login solo hay errores de formato por campo; el resto es el genérico INVALID_CREDENTIALS.
+  const state = useMemo(() => sanitizeAuthState(mode, rawState), [mode, rawState]);
   // Campos editados desde el último envío: su error se oculta hasta el próximo envío.
   const [edited, setEdited] = useState<Partial<Record<AuthField, boolean>>>({});
   const refs = useRef<Partial<Record<AuthField, HTMLInputElement | null>>>({});
@@ -96,14 +99,14 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           label={t.passwordLabel}
           hint={mode === "register" ? copy.register.passwordHint : undefined}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
-          minLength={PASSWORD_MIN_LENGTH}
+          minLength={mode === "register" ? PASSWORD_MIN_LENGTH : undefined}
           required
           error={errorFor("password")}
           onChange={() => markEdited("password")}
         />
       </div>
 
-      {state.status === "error" && state.formError && (
+      {state.formError && (
         <p role="alert" className="flex items-start gap-2 text-sm text-negative">
           <CircleAlert size={16} aria-hidden className="mt-0.5 shrink-0" />
           {errorText({ code: state.formError })}
@@ -115,7 +118,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       </Button>
 
       <div role="status" aria-live="polite">
-        {state.status === "coming-soon" && !isPending && (
+        {state.notice === "COMING_SOON" && !isPending && (
           <p className="flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm text-text">
             <Info size={16} aria-hidden className="mt-0.5 shrink-0 text-primary" />
             {copy.general.comingSoon}
