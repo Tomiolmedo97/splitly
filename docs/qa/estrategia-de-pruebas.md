@@ -22,7 +22,7 @@ Detectar antes de producción los errores que más dañan la confianza del usuar
   - el resultado es determinista (misma entrada, misma salida, sin importar el orden de entrada);
   - la simplificación greedy deja a todos en 0 y nunca genera más de n−1 transferencias.
 - **API (Vitest con Route Handlers o Playwright `request`):** códigos de estado 200/201/400/401/403/404/409, validaciones, acceso a un grupo ajeno, cambio de moneda con gastos y respuesta con los balances de antes y de después.
-- **Punta a punta (Playwright):** contra el preview de Vercel de cada PR, con el bypass de protección y el branch de Neon con seed. Navegadores: Chromium, WebKit y Pixel 5 (mobile), más un viewport de 360 px.
+- **Punta a punta (Playwright):** contra la app local con un Postgres local sembrado (el seed solo corre en localhost, ver docs/qa/e2e.md) y, para los specs que crean sus propios datos, contra el preview de Vercel de cada PR con el bypass de protección. Navegadores: Chromium, WebKit y Pixel 5 (mobile), más un viewport de 360 px.
 - **Accesibilidad (axe):** cero violaciones serias o críticas en las 5 pantallas, navegación con teclado en el formulario de gasto y `prefers-reduced-motion` emulado.
 - **Manual exploratorio:** en cada cierre de sprint, el celular real de Tomas y Safari en iOS.
 
@@ -47,6 +47,6 @@ Detectar antes de producción los errores que más dañan la confianza del usuar
 El título, los pasos, el resultado esperado contra el actual, la severidad y la prioridad, el entorno (navegador, dispositivo, commit o URL del preview), la evidencia y el impacto. Los bugs se reportan como issues en GitHub con la etiqueta `bug` y su severidad.
 
 ## Pendientes a definir
-- El monto máximo por gasto (propuesta: 999.999.999,99 para evitar overflow y errores de UI).
+- El monto máximo por gasto ya está definido: $ 999.999.999,99 = 99999999999 centavos (columnas BigInt, `number` en la app). Ver AM-07.
 - El largo máximo de la descripción y del nombre de un miembro (propuesta: 100 y 50 caracteres).
 - La regla de los porcentajes: se asume piso por parte y el resto, por orden de id, igual que en la división igual. **BE Bot, por favor confirmalo.**

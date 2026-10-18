@@ -9,12 +9,16 @@
     "dev": "pnpm --filter @splitly/web dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r typecheck",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "typecheck": "pnpm -r typecheck && pnpm typecheck:e2e",
+    "test": "pnpm -r test",
+    "typecheck:e2e": "tsc -p e2e/tsconfig.json",
+    "test:e2e": "playwright test",
+    "test:e2e:list": "playwright test --list"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.64.1",
+    "@types/node": "^22.10.0",
     "typescript": "^5.6.3"
   }
 }

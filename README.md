@@ -58,3 +58,7 @@ pnpm --filter @splitly/web db:seed       # datos de ejemplo: SOLO con DATABASE_U
 - Usuarios del seed: `tomas@example.com` / `lucia@example.com`, contraseña `splitly-demo-123`.
 
 Requiere Node >= 20 y pnpm 9.
+
+## Pruebas punta a punta
+
+Playwright en `e2e/` (`pnpm test:e2e`). Nunca se corren contra la base de producción: ver [docs/qa/e2e.md](docs/qa/e2e.md).
