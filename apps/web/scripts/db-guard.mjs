@@ -7,11 +7,21 @@
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
-/** Host de una URL de Postgres, en minúsculas, o null si no se puede leer. */
+// Parámetros con los que libpq o Neon eligen otro host/endpoint que el de la URL:
+// si aparecen, la guarda no puede saber a dónde se conecta Prisma y devuelve null.
+const HOST_OVERRIDE_PARAMS = new Set(["host", "hostaddr"]);
+
+/** Host de una URL de Postgres, en minúsculas, o null si no se puede leer con certeza. */
 export function dbHost(url) {
   if (!url) return null;
   try {
-    return new URL(url).hostname.toLowerCase() || null;
+    const parsed = new URL(url);
+    for (const [key, value] of parsed.searchParams) {
+      const k = key.toLowerCase();
+      if (HOST_OVERRIDE_PARAMS.has(k)) return null;
+      if (k === "options" && /endpoint\s*=/i.test(value)) return null;
+    }
+    return parsed.hostname.toLowerCase() || null;
   } catch {
     return null;
   }
@@ -43,12 +53,13 @@ export function isLocalDatabase(env) {
 
 /**
  * El seed corre SOLO contra un Postgres en localhost (local o CI): todas las URLs
- * presentes tienen que tener host localhost, 127.0.0.1 o ::1, leído con new URL().
- * En preview vuelve a correr cuando PROD_DB_HOST esté cargado en Vercel.
- * En cualquier otro caso se niega, aunque falte VERCEL_ENV (p. ej. después de `vercel env pull`).
+ * presentes tienen que tener host localhost, 127.0.0.1 o ::1, leído con new URL(), y sin
+ * parámetros que cambien el host. Con cualquier VERCEL_ENV definido se niega (en preview
+ * vuelve a correr cuando PROD_DB_HOST esté cargado). Sin VERCEL_ENV y con una base remota
+ * también se niega (p. ej. después de `vercel env pull`).
  */
 export function canSeed(env) {
-  if (env.VERCEL_ENV === "production" || env.VERCEL_ENV === "development") return false;
+  if (env.VERCEL_ENV !== undefined) return false;
   return isLocalDatabase(env);
 }
 

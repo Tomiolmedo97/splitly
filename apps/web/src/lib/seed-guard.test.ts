@@ -32,9 +32,19 @@ describe("guarda del seed", () => {
     expect(canSeed({ DATABASE_URL: "postgres://localhost:p@db.neon.tech/x" })).toBe(false);
     expect(canSeed({ ...local, DATABASE_URL_UNPOOLED: prodUrls.DATABASE_URL_UNPOOLED })).toBe(false);
   });
-  it("nunca corre en Vercel por ahora: ni production, ni development, ni preview", () => {
+  it("se niega si un parámetro cambia el host al que se conecta Prisma (F)", () => {
+    expect(canSeed({ DATABASE_URL: "postgresql://u:p@localhost:5432/db?host=10.255.255.1" })).toBe(false);
+    expect(canSeed({ DATABASE_URL: "postgresql://u:p@localhost:5432/db?HOST=10.255.255.1" })).toBe(false);
+    expect(canSeed({ DATABASE_URL: "postgresql://u:p@localhost:5432/db?hostaddr=10.255.255.1" })).toBe(false);
+    expect(canSeed({ DATABASE_URL: "postgresql://u:p@localhost:5432/db?options=endpoint%3Dep-prod-123" })).toBe(false);
+    expect(canSeed({ DATABASE_URL: "postgresql://u:p@localhost:5432/db?sslmode=disable&host=localhost" })).toBe(false);
+    expect(canSeed({ DATABASE_URL: "postgresql://u:p@localhost:5432/db?sslmode=disable" })).toBe(true);
+  });
+  it("nunca corre con VERCEL_ENV definido, aunque la base sea local (G)", () => {
     expect(canSeed({ VERCEL_ENV: "production", ...local })).toBe(false);
     expect(canSeed({ VERCEL_ENV: "development", ...local })).toBe(false);
+    expect(canSeed({ VERCEL_ENV: "preview", ...local })).toBe(false);
+    expect(canSeed({ VERCEL_ENV: "", ...local })).toBe(false);
     expect(canSeed({ VERCEL_ENV: "preview", PROD_DB_HOST: PROD, ...branchUrls })).toBe(false);
     expect(canSeed({ VERCEL_ENV: "preview", ...prodUrls })).toBe(false);
   });
@@ -51,6 +61,13 @@ describe("guarda de la migración de preview", () => {
       canMigratePreview({ PROD_DB_HOST: PROD, DATABASE_URL: branchUrls.DATABASE_URL, DATABASE_URL_UNPOOLED: prodUrls.DATABASE_URL_UNPOOLED }),
     ).toBe(false);
     expect(canMigratePreview({ PROD_DB_HOST: PROD.toUpperCase(), ...prodUrls })).toBe(false);
+  });
+  it("no migra si un parámetro manda la conexión a otro host o endpoint (F)", () => {
+    const b = branchUrls.DATABASE_URL_UNPOOLED;
+    expect(canMigratePreview({ PROD_DB_HOST: PROD, ...branchUrls, DATABASE_URL_UNPOOLED: `${b}?host=${PROD}` })).toBe(false);
+    expect(canMigratePreview({ PROD_DB_HOST: PROD, ...branchUrls, DATABASE_URL_UNPOOLED: `${b}?hostaddr=10.0.0.1` })).toBe(false);
+    expect(canMigratePreview({ PROD_DB_HOST: PROD, ...branchUrls, DATABASE_URL: `${branchUrls.DATABASE_URL}?options=endpoint%3Dep-prod-123` })).toBe(false);
+    expect(canMigratePreview({ PROD_DB_HOST: PROD, ...branchUrls, DATABASE_URL_UNPOOLED: `${b}?sslmode=require` })).toBe(true);
   });
   it("no migra si falta PROD_DB_HOST o una URL no se puede leer", () => {
     expect(canMigratePreview({ ...branchUrls })).toBe(false);
