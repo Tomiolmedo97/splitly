@@ -8,11 +8,11 @@ Monorepo con pnpm workspaces:
 
 ```
 apps/
-  web/          # Next.js (App Router, TypeScript, Tailwind v4)
+  web/          # Next.js (App Router, TypeScript, Tailwind v4) + Prisma (apps/web/prisma)
 packages/
   core/         # Lógica de dominio pura: división de gastos, balances, simplificación de deudas
 .github/
-  workflows/ci.yml   # CI: install, typecheck, tests
+  workflows/ci.yml   # CI: install, Prisma validate/generate, typecheck, tests
   dependabot.yml
 ```
 
@@ -34,5 +34,27 @@ pnpm dev        # levanta apps/web
 pnpm typecheck
 pnpm test
 ```
+
+### Base de datos (Prisma + Neon Postgres 17)
+
+El esquema está en `apps/web/prisma/schema.prisma` y las migraciones en `apps/web/prisma/migrations`.
+
+```bash
+pnpm --filter @splitly/web db:generate   # genera Prisma Client
+pnpm --filter @splitly/web db:migrate    # prisma migrate deploy (usa DATABASE_URL_UNPOOLED)
+pnpm --filter @splitly/web db:seed       # datos de ejemplo: SOLO con DATABASE_URL a localhost
+```
+
+- `DATABASE_URL`: conexión con pooler (la usa la app). `DATABASE_URL_UNPOOLED`: conexión directa (migraciones).
+- `PROD_DB_HOST` (no secreta, en Vercel para preview): host de la base de producción de Neon, sin usuario ni contraseña.
+  `scripts/db-guard.mjs` la usa para que la migración de un preview no toque esa base. Si falta, se saltea.
+  El seed corre solo contra `localhost`: **`db:seed` se niega después de `vercel env pull`**.
+- Para una migración nueva: editar el schema y correr
+  `pnpm --filter @splitly/web exec prisma migrate dev --name <nombre>` contra una base local o un branch de Neon.
+- Plata: `BigInt` en la base (tope por gasto 99.999.999.999 centavos, con CHECK). `src/lib/cents.ts` convierte a `number` en el borde: el resto de la app nunca ve `bigint`.
+- Bajas lógicas: los integrantes quitados quedan con `Member.removedAt` y los gastos borrados con `Expense.deletedAt`.
+  **Los balances siempre ignoran los gastos con `deletedAt`**. Borrar un grupo sí es físico (primero sus gastos, después el grupo, en una transacción).
+- El nombre de un invitado es único por grupo solo entre invitados activos, sin distinguir mayúsculas ni espacios en los extremos (índice parcial escrito a mano en la migración inicial). Pagador y partes de un gasto tienen que ser del mismo grupo (FK compuestas).
+- Usuarios del seed: `tomas@example.com` / `lucia@example.com`, contraseña `splitly-demo-123`.
 
 Requiere Node >= 20 y pnpm 9.
