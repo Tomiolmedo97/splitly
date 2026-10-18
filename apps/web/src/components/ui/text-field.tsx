@@ -3,6 +3,7 @@
 import { forwardRef, useId, useState, type InputHTMLAttributes } from "react";
 import { CircleAlert, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { copy } from "@/lib/copy";
 
 export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
   label: string;
@@ -22,7 +23,9 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
   const hintId = `${inputId}-hint`;
   const isPassword = type === "password";
   const [showPassword, setShowPassword] = useState(false);
-  const describedByIds = [describedBy, hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ");
+  // Solo ids de elementos que se renderizan: la ayuda se oculta cuando hay error.
+  const showHint = Boolean(hint) && !error;
+  const describedByIds = [describedBy, showHint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ");
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
@@ -53,7 +56,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             disabled={disabled}
-            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-label={showPassword ? copy.login.hidePassword : copy.login.showPassword}
             aria-pressed={showPassword}
             aria-controls={inputId}
             className={cn(
@@ -66,7 +69,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
           </button>
         )}
       </div>
-      {hint && !error && (
+      {showHint && (
         <p id={hintId} className="text-xs text-muted">
           {hint}
         </p>
