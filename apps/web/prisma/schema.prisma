@@ -19,7 +19,7 @@ datasource db {
   // Conexión con pooling (PgBouncer de Neon) para la app en Vercel.
   url       = env("DATABASE_URL")
   // Conexión directa (sin pooler) para migraciones.
-  directUrl = env("DIRECT_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 enum Currency {

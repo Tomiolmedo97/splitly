@@ -41,11 +41,11 @@ El esquema está en `apps/web/prisma/schema.prisma` y las migraciones en `apps/w
 
 ```bash
 pnpm --filter @splitly/web db:generate   # genera Prisma Client
-pnpm --filter @splitly/web db:migrate    # prisma migrate deploy (usa DIRECT_URL)
+pnpm --filter @splitly/web db:migrate    # prisma migrate deploy (usa DATABASE_URL_UNPOOLED)
 pnpm --filter @splitly/web db:seed       # datos de ejemplo: SOLO local o VERCEL_ENV=preview
 ```
 
-- `DATABASE_URL`: conexión con pooler (la usa la app). `DIRECT_URL`: conexión directa (migraciones).
+- `DATABASE_URL`: conexión con pooler (la usa la app). `DATABASE_URL_UNPOOLED`: conexión directa (migraciones).
 - Para una migración nueva: editar el schema y correr
   `pnpm --filter @splitly/web exec prisma migrate dev --name <nombre>` contra una base local o un branch de Neon.
 - Plata: `BigInt` en la base (tope por gasto 99.999.999.999 centavos, con CHECK). `src/lib/cents.ts` convierte a `number` en el borde: el resto de la app nunca ve `bigint`.

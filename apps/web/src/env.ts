@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
-  DIRECT_URL: z.string().url(),
+  DATABASE_URL_UNPOOLED: z.string().url(),
   AUTH_SECRET: z.string().min(32),
   NEXT_PUBLIC_APP_URL: z.string().url(),
 });
