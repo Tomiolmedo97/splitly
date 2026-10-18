@@ -1,14 +1,42 @@
-import { randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from "node:crypto";
+import { hash as argon2Hash, verify as argon2Verify } from "@node-rs/argon2";
+import { scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from "node:crypto";
 
 /**
- * Hash de contraseñas con scrypt (node:crypto): sin dependencias nativas, anda
- * en las funciones Node de Vercel. Formato guardado en User.passwordHash:
- *   scrypt$N$r$p$<salt base64url>$<hash base64url>
- * Guardar los parámetros permite subirlos más adelante sin romper hashes viejos.
+ * Hash de contraseñas con argon2id (@node-rs/argon2: binario precompilado, sin
+ * compilar nada en Vercel). Formato PHC estándar: $argon2id$v=19$m=...,t=...,p=...$sal$hash.
+ *
+ * Parámetros: 19 MiB, 2 iteraciones, 1 hilo (mínimo recomendado por OWASP para argon2id).
+ * Quedan dentro del hash, así que se pueden subir más adelante sin romper los viejos.
+ *
+ * `verifyPassword` también acepta el formato scrypt anterior (scrypt$N$r$p$sal$hash),
+ * que solo usó el seed local antes de este cambio.
  */
-const PARAMS = { N: 16384, r: 8, p: 1 } as const;
-const KEY_LENGTH = 64;
-const SALT_BYTES = 16;
+const ARGON2_OPTIONS = { algorithm: 2 /* Argon2id */, memoryCost: 19456, timeCost: 2, parallelism: 1 } as const;
+
+export async function hashPassword(password: string): Promise<string> {
+  return argon2Hash(password, ARGON2_OPTIONS);
+}
+
+export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  try {
+    if (stored.startsWith("$argon2")) return await argon2Verify(stored, password);
+    if (stored.startsWith("scrypt$")) return await verifyLegacyScrypt(password, stored);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Hash de una contraseña que nadie tiene, con los mismos parámetros que los reales.
+ * Se verifica contra él cuando el email no existe, para que ese caso tarde lo mismo
+ * que una contraseña equivocada y no se pueda saber qué emails tienen cuenta.
+ */
+let dummyHash: Promise<string> | undefined;
+export function getDummyHash(): Promise<string> {
+  dummyHash ??= hashPassword("splitly-dummy-password-que-nadie-usa");
+  return dummyHash;
+}
 
 function scrypt(password: string, salt: Buffer, keylen: number, options: ScryptOptions): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -16,15 +44,9 @@ function scrypt(password: string, salt: Buffer, keylen: number, options: ScryptO
   });
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(SALT_BYTES);
-  const key = await scrypt(password, salt, KEY_LENGTH, PARAMS);
-  return ["scrypt", PARAMS.N, PARAMS.r, PARAMS.p, salt.toString("base64url"), key.toString("base64url")].join("$");
-}
-
-export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+async function verifyLegacyScrypt(password: string, stored: string): Promise<boolean> {
   const parts = stored.split("$");
-  if (parts.length !== 6 || parts[0] !== "scrypt") return false;
+  if (parts.length !== 6) return false;
   const [, n, r, p, saltB64, keyB64] = parts as [string, string, string, string, string, string];
   const expected = Buffer.from(keyB64, "base64url");
   if (expected.length === 0) return false;

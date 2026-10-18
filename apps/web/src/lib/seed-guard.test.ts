@@ -69,6 +69,16 @@ describe("guarda de la migración de preview", () => {
     expect(canMigratePreview({ PROD_DB_HOST: PROD, ...branchUrls, DATABASE_URL: `${branchUrls.DATABASE_URL}?options=endpoint%3Dep-prod-123` })).toBe(false);
     expect(canMigratePreview({ PROD_DB_HOST: PROD, ...branchUrls, DATABASE_URL_UNPOOLED: `${b}?sslmode=require` })).toBe(true);
   });
+  it("no migra con un punto final en el host ni con options=project (H)", () => {
+    const prodDot = { DATABASE_URL: prodUrls.DATABASE_URL, DATABASE_URL_UNPOOLED: `postgresql://u:p@${PROD}./splitly` };
+    expect(canMigratePreview({ PROD_DB_HOST: PROD, ...prodDot })).toBe(false);
+    expect(canMigratePreview({ PROD_DB_HOST: `${PROD}.`, ...prodUrls })).toBe(false);
+    expect(canMigratePreview({ PROD_DB_HOST: `${PROD}.`, ...branchUrls })).toBe(true);
+    const b = branchUrls.DATABASE_URL;
+    expect(canMigratePreview({ PROD_DB_HOST: PROD, ...branchUrls, DATABASE_URL: `${b}?options=project%3Dep-prod-123` })).toBe(false);
+    expect(canMigratePreview({ PROD_DB_HOST: PROD, ...branchUrls, DATABASE_URL: `${b}?OPTIONS=Project%3Dep-prod-123` })).toBe(false);
+    expect(canSeed({ DATABASE_URL: "postgresql://u:p@localhost./splitly" })).toBe(true);
+  });
   it("no migra si falta PROD_DB_HOST o una URL no se puede leer", () => {
     expect(canMigratePreview({ ...branchUrls })).toBe(false);
     expect(canMigratePreview({ PROD_DB_HOST: PROD, DATABASE_URL: "no-es-una-url", DATABASE_URL_UNPOOLED: branchUrls.DATABASE_URL_UNPOOLED })).toBe(false);

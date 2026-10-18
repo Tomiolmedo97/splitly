@@ -7,13 +7,15 @@ export type AuthField = "name" | "email" | "password";
 export type AuthValues = Partial<Record<AuthField, string>>;
 
 /** Códigos de error por campo. El texto se resuelve en la UI con `fieldErrorCopy`. */
-export type AuthFieldErrorCode = "REQUIRED" | "INVALID_EMAIL" | "PASSWORD_TOO_SHORT";
+/** EMAIL_TAKEN lo devuelve solo el servidor (registerForm), en el campo email. */
+export type AuthFieldErrorCode = "REQUIRED" | "INVALID_EMAIL" | "PASSWORD_TOO_SHORT" | "EMAIL_TAKEN";
 export type AuthFieldErrors = Partial<Record<AuthField, AuthFieldErrorCode>>;
 
 export const fieldErrorCopy: Record<AuthFieldErrorCode, string> = {
   REQUIRED: copy.authErrors.required,
   INVALID_EMAIL: copy.authErrors.invalidEmail,
   PASSWORD_TOO_SHORT: copy.authErrors.passwordTooShort,
+  EMAIL_TAKEN: copy.authErrors.emailTaken,
 };
 
 /** Validación solo en el cliente. Valida únicamente los campos presentes en `values`. */
