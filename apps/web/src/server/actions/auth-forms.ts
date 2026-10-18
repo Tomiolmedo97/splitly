@@ -1,6 +1,5 @@
 /**
- * Acciones de los formularios de /ingresar y /registro (useActionState).
- * Hoy apuntan al stub. Cuando BE publique registerForm y loginForm en ./auth.ts,
- * cambiar SOLO esta línea por: export { loginForm, registerForm } from "./auth";
+ * Acciones de los formularios de /ingresar, /registro y "Cerrar sesión" (useActionState / <form action>).
+ * Son las Server Actions reales de BE (./auth.ts). Para volver a un stub, cambiar solo esta línea.
  */
-export { loginForm, registerForm } from "./auth-form.stub";
+export { loginForm, logoutForm, registerForm } from "./auth";

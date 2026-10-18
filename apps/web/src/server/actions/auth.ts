@@ -3,9 +3,8 @@
 import { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import type { AuthFormState } from "@/lib/auth-action";
-import { failureToFormState, readAuthValues, safeValues } from "@/lib/auth-form-state";
-import { validateAuth } from "@/lib/auth-validation";
+import { invalidAuthState, type AuthFormState } from "@/lib/auth-action";
+import { failureToFormState, readAuthValues } from "@/lib/auth-form-state";
 import { getDummyHash, hashPassword, verifyPassword } from "@/lib/password";
 import { clientIp, consumeRateLimit, resetRateLimit } from "@/server/rate-limit";
 import { createSession, destroySession } from "@/server/session";
@@ -146,24 +145,23 @@ export async function logout(): Promise<ActionResult<null, "INTERNAL">> {
 export async function loginForm(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const values = readAuthValues("login", formData);
   // En login el largo mínimo no aplica: solo vacío o email mal escrito. Una contraseña corta
-  // va a login() y termina en INVALID_CREDENTIALS, igual que cualquier contraseña incorrecta.
-  const fieldErrors = validateAuth(values);
-  if (fieldErrors.password === "PASSWORD_TOO_SHORT") delete fieldErrors.password;
-  if (Object.keys(fieldErrors).length > 0) return { status: "invalid", values: safeValues(values), fieldErrors };
+  // (o demasiado larga) va a login() y termina en INVALID_CREDENTIALS, como cualquier otra incorrecta.
+  const invalid = invalidAuthState("login", values);
+  if (invalid) return invalid;
 
   const result = await login({ email: values.email ?? "", password: values.password ?? "" });
-  if (!result.ok) return failureToFormState(result, values);
+  if (!result.ok) return failureToFormState("login", result, values);
   redirect(AFTER_AUTH_PATH);
 }
 
 export async function registerForm(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const values = readAuthValues("register", formData);
-  const fieldErrors = validateAuth(values);
-  if (Object.keys(fieldErrors).length > 0) return { status: "invalid", values: safeValues(values), fieldErrors };
+  const invalid = invalidAuthState("register", values);
+  if (invalid) return invalid;
 
   const input = { name: values.name ?? "", email: values.email ?? "", password: values.password ?? "" };
   const created = await register(input);
-  if (!created.ok) return failureToFormState(created, values);
+  if (!created.ok) return failureToFormState("register", created, values);
 
   // Cuenta recién creada: sesión directa, sin un segundo login (no gasta el rate limit
   // de login ni vuelve a verificar el hash).
@@ -171,7 +169,7 @@ export async function registerForm(_prev: AuthFormState, formData: FormData): Pr
     await createSession(created.data.id);
   } catch (error) {
     logError("registerForm.createSession", error);
-    return failureToFormState({ ok: false, error: { code: "INTERNAL", message: "No se pudo iniciar sesión." } }, values);
+    return failureToFormState("register", { ok: false, error: { code: "INTERNAL", message: "No se pudo iniciar sesión." } }, values);
   }
   redirect(AFTER_AUTH_PATH);
 }

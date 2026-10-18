@@ -47,6 +47,12 @@ export const copy = {
     memberHasBalance: "{nombre} todavía tiene saldo. Tiene que quedar al día antes de salir del grupo",
     currencyLocked: "Este grupo ya tiene gastos, así que la moneda no se puede cambiar",
   },
+  myGroups: {
+    /** h1. `{nombre}` lo completa FE con el nombre de la sesión. */
+    greeting: "Hola, {nombre}",
+    emptyTitle: "Todavía no tenés grupos",
+    emptyText: "Creá uno para el próximo viaje, la casa o el asado",
+  },
   newGroup: {
     currencyHelp: "Podés cambiarla mientras el grupo no tenga gastos",
   },
@@ -68,7 +74,6 @@ export const copy = {
     retry: "Probar de nuevo",
     genericError: "Algo salió mal. Probá de nuevo",
     sessionExpired: "Tu sesión terminó. Ingresá de nuevo",
-    /** Aviso al enviar Ingreso/Registro mientras no hay Server Actions. */
-    comingSoon: "Muy pronto vas a poder ingresar. Por ahora no guardamos tus datos",
+    logout: "Cerrar sesión",
   },
 } as const;

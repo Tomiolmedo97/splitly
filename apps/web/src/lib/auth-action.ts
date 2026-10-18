@@ -30,18 +30,11 @@ export type AuthFormState = {
   fieldErrors: AuthFieldErrors;
   /** Error de formulario según el `code` de BE (INVALID_CREDENTIALS, RATE_LIMITED, INTERNAL…). Texto vía `errorText`, nunca el `message`. */
   formError: ErrorCode | null;
-  /** Solo el stub: aviso de "próximamente" mientras no hay acciones reales. BE no lo usa. */
-  notice?: "COMING_SOON";
 };
 
 export type AuthFormAction = (prevState: AuthFormState, formData: FormData) => Promise<AuthFormState>;
 
 export const initialAuthState: AuthFormState = { values: {}, fieldErrors: {}, formError: null };
-
-/** Lee los campos del modo desde el FormData. */
-export function readAuthValues(mode: AuthMode, formData: FormData): AuthValues {
-  return Object.fromEntries(authFieldsByMode[mode].map((f) => [f, String(formData.get(f) ?? "")]));
-}
 
 function withoutPassword(values: AuthValues): Omit<AuthValues, "password"> {
   const { password: _password, ...safe } = values;
@@ -65,7 +58,7 @@ function codeForInvalidField(mode: AuthMode, field: AuthField, value: string): A
 
 /**
  * Traduce el ActionResult de `register`/`login` (contracts.ts) al estado del formulario.
- * Lo usa el stub y BE lo puede reusar en registerForm/loginForm.
+ * Lo usan registerForm/loginForm (vía failureToFormState de auth-form-state.ts).
  * - register: EMAIL_TAKEN → fieldErrors.email; PASSWORD_TOO_SHORT → fieldErrors.password.
  * - login: INVALID_CREDENTIALS es siempre de formulario: mail inexistente y contraseña
  *   incorrecta dan exactamente el mismo estado (no se filtra si el email existe).
@@ -123,7 +116,7 @@ export function isFailedSubmit(state: AuthFormState): boolean {
 /**
  * Campo que recibe el foco después de un envío fallido: el primero con error, en el orden del formulario.
  * Si ningún campo tiene error (error de formulario como INVALID_CREDENTIALS o RATE_LIMITED), la contraseña.
- * Devuelve `null` si el envío no falló (estado inicial o "próximamente").
+ * Devuelve `null` si el envío no falló (estado inicial).
  */
 export function focusTargetAfterSubmit(state: AuthFormState, fields: readonly AuthField[]): AuthField | null {
   if (!isFailedSubmit(state)) return null;

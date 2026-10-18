@@ -1,5 +1,5 @@
 import type { AuthFormState, AuthMode } from "./auth-action";
-import { authFieldsByMode } from "./auth-action";
+import { authFieldsByMode, authStateFromResult } from "./auth-action";
 import type { AuthValues } from "./auth-validation";
 import type { ActionResult } from "@/server/actions/contracts";
 
@@ -20,22 +20,16 @@ export function safeValues(values: AuthValues): AuthFormState["values"] {
 }
 
 /**
- * Traduce el resultado de register/login al estado del formulario de FE.
- * - EMAIL_TAKEN y PASSWORD_TOO_SHORT van al campo (status "invalid").
- * - El resto (INVALID_CREDENTIALS, RATE_LIMITED, VALIDATION_ERROR, INTERNAL) va a
- *   formError (status "error"). El texto lo elige FE por código.
+ * Traduce el resultado de register/login al estado del formulario de FE (ver authStateFromResult):
+ * - register: EMAIL_TAKEN y PASSWORD_TOO_SHORT van al campo.
+ * - login: INVALID_CREDENTIALS es siempre de formulario, sin pistas por campo.
+ * - VALIDATION_ERROR va por campo (con código), el resto (RATE_LIMITED, INTERNAL…) a formError.
+ * El texto lo elige FE por código; el `message` nunca llega al estado.
  */
 export function failureToFormState(
+  mode: AuthMode,
   result: Extract<ActionResult<unknown>, { ok: false }>,
   values: AuthValues,
 ): AuthFormState {
-  const base = { values: safeValues(values), fieldErrors: {} };
-  switch (result.error.code) {
-    case "EMAIL_TAKEN":
-      return { ...base, status: "invalid", fieldErrors: { email: "EMAIL_TAKEN" } };
-    case "PASSWORD_TOO_SHORT":
-      return { ...base, status: "invalid", fieldErrors: { password: "PASSWORD_TOO_SHORT" } };
-    default:
-      return { ...base, status: "error", formError: result.error.code };
-  }
+  return authStateFromResult(mode, values, result);
 }

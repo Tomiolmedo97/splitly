@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { CircleAlert, Info } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
 import { copy } from "@/lib/copy";
@@ -116,15 +116,6 @@ export function AuthForm({ mode, action }: { mode: AuthMode; action: AuthFormAct
       <Button type="submit" className="w-full sm:h-12" loading={isPending} loadingText={t.submitting}>
         {t.submit}
       </Button>
-
-      <div role="status" aria-live="polite">
-        {state.notice === "COMING_SOON" && !isPending && (
-          <p className="flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm text-text">
-            <Info size={16} aria-hidden className="mt-0.5 shrink-0 text-primary" />
-            {copy.general.comingSoon}
-          </p>
-        )}
-      </div>
 
       <p className="text-center text-sm text-muted">
         {mode === "login" ? (

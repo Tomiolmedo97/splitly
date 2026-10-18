@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { loginForm, registerForm } from "@/server/actions/auth-forms";
 import {
   authFieldsByMode,
   authStateFromResult,
@@ -61,77 +60,6 @@ describe("errorText", () => {
   });
 });
 
-const form = (entries: Record<string, string>) => {
-  const fd = new FormData();
-  for (const [k, v] of Object.entries(entries)) fd.set(k, v);
-  return fd;
-};
-
-describe("registerForm (stub)", () => {
-  it("inválido: códigos por campo y los valores, sin la contraseña", async () => {
-    const state = await registerForm(initialAuthState, form({ name: "Ana", email: "ana@", password: "123" }));
-    expect(state).toEqual({
-      values: { name: "Ana", email: "ana@" },
-      fieldErrors: { email: "INVALID_EMAIL", password: "PASSWORD_TOO_SHORT" },
-      formError: null,
-    });
-    expect(state.values).not.toHaveProperty("password");
-  });
-
-  it("EMAIL_TAKEN va en fieldErrors.email y el foco va al email", async () => {
-    const state = await registerForm(initialAuthState, form({ name: "Ana", email: "ocupado@ejemplo.com", password: "12345678" }));
-    expect(state).toEqual({
-      values: { name: "Ana", email: "ocupado@ejemplo.com" },
-      fieldErrors: { email: "EMAIL_TAKEN" },
-      formError: null,
-    });
-    expect(focusTargetAfterSubmit(state, authFieldsByMode.register)).toBe("email");
-  });
-
-  it("RATE_LIMITED es error de formulario con el texto de textos.md", async () => {
-    const state = await registerForm(initialAuthState, form({ name: "Ana", email: "limite@ejemplo.com", password: "12345678" }));
-    expect(state.formError).toBe("RATE_LIMITED");
-    expect(state.fieldErrors).toEqual({});
-    expect(errorText({ code: state.formError })).toBe("Hiciste muchos intentos. Probá de nuevo en unos minutos");
-  });
-
-  it("válido: 'próximamente' y conserva los valores", async () => {
-    const state = await registerForm(initialAuthState, form({ name: "Ana", email: "ana@ejemplo.com", password: "12345678" }));
-    expect(state).toEqual({ values: { name: "Ana", email: "ana@ejemplo.com" }, fieldErrors: {}, formError: null, notice: "COMING_SOON" });
-  });
-});
-
-describe("loginForm (stub): no filtra si el email existe", () => {
-  it("mail inexistente y contraseña incorrecta dan el mismo estado genérico", async () => {
-    const wrongEmail = await loginForm(initialAuthState, form({ email: "noexiste@ejemplo.com", password: "12345678" }));
-    const wrongPassword = await loginForm(initialAuthState, form({ email: "ana@ejemplo.com", password: "incorrecta" }));
-    for (const state of [wrongEmail, wrongPassword]) {
-      expect(state.fieldErrors).toEqual({});
-      expect(state.formError).toBe("INVALID_CREDENTIALS");
-      expect(errorText({ code: state.formError })).toBe("El email o la contraseña no coinciden");
-      expect(state.values).not.toHaveProperty("password");
-      expect(focusTargetAfterSubmit(state, authFieldsByMode.login)).toBe("password");
-    }
-    expect({ ...wrongEmail, values: {} }).toEqual({ ...wrongPassword, values: {} });
-  });
-
-  it("contraseña corta en login no da pista por campo", async () => {
-    const state = await loginForm(initialAuthState, form({ email: "noexiste@ejemplo.com", password: "123" }));
-    expect(state).toEqual({ values: { email: "noexiste@ejemplo.com" }, fieldErrors: {}, formError: "INVALID_CREDENTIALS" });
-  });
-
-  it("RATE_LIMITED: error de formulario genérico", async () => {
-    const state = await loginForm(initialAuthState, form({ email: "limite@ejemplo.com", password: "12345678" }));
-    expect(state).toEqual({ values: { email: "limite@ejemplo.com" }, fieldErrors: {}, formError: "RATE_LIMITED" });
-  });
-
-  it("solo errores de formato por campo (vacío, email mal escrito)", async () => {
-    const state = await loginForm(initialAuthState, form({ email: "ana@", password: "" }));
-    expect(state.fieldErrors).toEqual({ email: "INVALID_EMAIL", password: "REQUIRED" });
-    expect(state.formError).toBeNull();
-  });
-});
-
 describe("authStateFromResult (respuesta de register/login de BE)", () => {
   const values = { name: "Ana", email: "ana@ejemplo.com", password: "secreta123" };
   const err = (code: Parameters<typeof errorText>[0] & { code: string }, fieldErrors?: Record<string, string[]>) =>
@@ -188,6 +116,6 @@ describe("foco después de un envío fallido", () => {
 
   it("no mueve el foco si no hubo un envío fallido", () => {
     expect(focusTargetAfterSubmit(initialAuthState, login)).toBeNull();
-    expect(focusTargetAfterSubmit({ ...base, notice: "COMING_SOON" }, login)).toBeNull();
+    expect(focusTargetAfterSubmit({ ...base, values: { email: "ana@ejemplo.com" } }, login)).toBeNull();
   });
 });
