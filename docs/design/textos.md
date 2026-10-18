@@ -1,6 +1,6 @@
 # Splitly — Textos de la UI (MVP)
 
-Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de exclamación salvo en celebraciones. Los errores dicen qué pasó y cómo seguir, nunca culpan a la persona. Los montos siempre con signo y moneda.
+Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de exclamación salvo en celebraciones. Los errores dicen qué pasó y cómo seguir, nunca culpan a la persona. Los montos siempre con signo y moneda, salvo las deudas (quién le debe a quién, Saldar), que van sin signo.
 
 ## Ingreso (`/ingresar`)
 | Elemento | Texto |
@@ -49,7 +49,7 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Tarjeta resumen: label | Tu saldo |
 | Resumen: a favor | Te deben (un total por moneda, ej.: +$ 45.000,00 · +US$ 120,00) |
 | Resumen: en contra | Debés (un total por moneda; nunca se suman ARS y USD) |
-| Resumen: en cero | Estás al día |
+| Resumen: en cero (visible) | Estás al día |
 | Sección (h2) | Tus grupos |
 | Botón | Nuevo grupo |
 | Detalle de fila | {n} personas · {saldo} (con 1: 1 persona) |
@@ -70,7 +70,7 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Sección (h2) | Participantes |
 | Vos | {nombre} (vos) |
 | Agregar de tus grupos | Agregar de tus grupos |
-| Buscador (label sr-only, `role="searchbox"`) | Buscar en tus grupos |
+| Buscador (label sr-only; `<input type="search">` nativo, rol searchbox implícito) | Buscar en tus grupos |
 | Buscador (placeholder) | Buscá por nombre |
 | Cantidad de resultados (`aria-live="polite"`) | {n} personas · 1 persona |
 | Lista vacía en la búsqueda | No hay nadie con ese nombre en tus grupos |
@@ -79,7 +79,7 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Agregar solo con nombre: botón | Agregar (Enter también agrega) |
 | Etiqueta | sin cuenta |
 | Ayuda sin cuenta | Para quien no usa Splitly. Igual aparece en los gastos y saldos |
-| Quitar (aria-label) | Quitar a {nombre} |
+| Quitar (aria-label) | Quitar a {nombre} (solo lo ve quien creó el grupo) |
 | Botón principal | Crear grupo |
 | Botón cargando | Creando… |
 
@@ -89,8 +89,8 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Nombre vacío | Ponele un nombre al grupo (inline; el foco va al campo y Crear grupo sigue habilitado) |
 | Agregar solo con nombre vacío | Completá este campo |
 | Nombre muy largo | El nombre puede tener hasta 40 caracteres |
-| Persona ya agregada | Esa persona ya está en el grupo |
-| Nombre duplicado | Ya hay alguien con ese nombre. Sumale una inicial para distinguirlos |
+| Persona ya agregada (`USER_ALREADY_MEMBER`) | Esa persona ya está en el grupo |
+| Nombre duplicado (`GUEST_NAME_TAKEN`) | Ya hay alguien con ese nombre. Sumale una inicial para distinguirlos |
 | Sin acceso o inexistente (404 dentro de la app, la URL no cambia) | No encontramos este grupo o no tenés acceso |
 | 404: botón | Volver a mis grupos |
 | Quitar miembro con saldo | {nombre} todavía tiene saldo. Tiene que quedar al día antes de salir del grupo |
@@ -110,12 +110,23 @@ Tono: claro, cercano y breve. Voseo rioplatense. Frases cortas, sin signos de ex
 | Vacío gastos: título | Todavía no hay gastos |
 | Vacío gastos: texto | Cargá el primero y Splitly hace las cuentas |
 
+## Saldos para lectores de pantalla
+Cada fila de saldo se lee como una frase, con el monto sin ícono.
+| Caso | Texto |
+|---|---|
+| A favor | {nombre}, le deben {monto} (ej.: Sofi, le deben $ 4.500,00) |
+| En contra | {nombre}, debe {monto} (ej.: Juan, debe $ 1.500,00) |
+| En cero | {nombre}, está al día (ej.: Ana, está al día) |
+| Mis grupos en cero | Estás al día (es el mismo texto visible del resumen) |
+
 ## Errores de gastos
 | Caso | Texto |
 |---|---|
 | Monto máximo superado | El monto máximo por gasto es {monto} |
+| La división no cierra | Los montos tienen que sumar {total} |
 
-`{monto}` = `formatMoney(999.999.999,99, moneda del grupo)`. El texto se arma en la action; nunca se muestra crudo el mensaje del servidor.
+- Monto máximo: la validación devuelve solo el código del campo (`fieldErrors.amountCents`), sin texto ni monto. FE arma el texto con `{monto}` = `formatMoney(MAX_EXPENSE_CENTS, moneda del grupo)`; nunca se muestra el mensaje del servidor.
+- División: `{total}` = `formatMoney(monto del gasto, moneda del grupo)`. Se muestra inline al guardar y el foco va al primer monto.
 
 ## Formato de montos
 - `es-AR` para las dos monedas: punto de miles, coma decimal, dos decimales.
@@ -151,8 +162,8 @@ FE muestra siempre el texto según el `code`, nunca el `message` del servidor. `
 | `PASSWORD_TOO_SHORT` | La contraseña tiene que tener al menos 8 caracteres |
 | `RATE_LIMITED` | Hiciste muchos intentos. Probá de nuevo en unos minutos |
 | `UNAUTHENTICATED` | Tu sesión terminó. Ingresá de nuevo |
-| `MEMBER_DUPLICATE` | Esa persona ya está en el grupo |
-| `FORBIDDEN` | No tenés permiso para hacer esto en el grupo |
+| `MEMBER_DUPLICATE` | Un solo código con `fieldErrors.name`: `USER_ALREADY_MEMBER` → Esa persona ya está en el grupo · `GUEST_NAME_TAKEN` → Ya hay alguien con ese nombre. Sumale una inicial para distinguirlos. Si falta el subcódigo, se elige según lo que se estaba agregando (persona de tus grupos o solo con nombre) |
+| `FORBIDDEN` | No tenés permiso para hacer esto en el grupo (ej.: quitar a alguien sin ser quien creó el grupo) |
 | `NOT_FOUND` | No encontramos este grupo o no tenés acceso |
 | `MEMBER_HAS_BALANCE` | {nombre} todavía tiene saldo. Tiene que quedar al día antes de salir del grupo |
 | `CURRENCY_LOCKED` | Este grupo ya tiene gastos, así que la moneda no se puede cambiar |
