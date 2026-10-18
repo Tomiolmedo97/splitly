@@ -15,6 +15,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.2.2",
     "@prisma/client": "^6.19.3",
     "@splitly/core": "workspace:*",
     "clsx": "^2.1.1",
@@ -29,12 +30,12 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "tsx": "^4.20.0",
     "@tailwindcss/postcss": "^4.1.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "tailwindcss": "^4.1.0",
+    "tsx": "^4.20.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
   }

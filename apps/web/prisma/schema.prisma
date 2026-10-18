@@ -217,3 +217,17 @@ model ExpenseSplit {
   @@id([expenseId, memberId])
   @@index([memberId, groupId])
 }
+
+// ---------------------------------------------------------------------------
+// Rate limit de ingreso y registro
+// ---------------------------------------------------------------------------
+
+// Una fila por ventana y clave. La clave es un hash SHA-256 de "<ámbito>:<acción>:<ip|email>",
+// así no quedan emails ni IPs en claro. Ver src/server/rate-limit.ts.
+model AuthRateLimit {
+  key         String   @id
+  count       Int
+  windowStart DateTime
+
+  @@index([windowStart])
+}

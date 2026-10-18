@@ -19,9 +19,11 @@ export function dbHost(url) {
     for (const [key, value] of parsed.searchParams) {
       const k = key.toLowerCase();
       if (HOST_OVERRIDE_PARAMS.has(k)) return null;
-      if (k === "options" && /endpoint\s*=/i.test(value)) return null;
+      // Neon acepta el endpoint como options=endpoint%3D... o options=project%3D...
+      if (k === "options" && /(endpoint|project)\s*=/i.test(value)) return null;
     }
-    return parsed.hostname.toLowerCase() || null;
+    // Sin el punto final: "host.neon.tech." resuelve igual que "host.neon.tech".
+    return parsed.hostname.toLowerCase().replace(/\.+$/, "") || null;
   } catch {
     return null;
   }
