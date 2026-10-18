@@ -13,17 +13,10 @@ import { z } from "zod";
 export const MAX_EXPENSE_CENTS = 99_999_999_999;
 const MAX_CENTS_MESSAGE = "El monto máximo por gasto es $ 999.999.999,99";
 
-export const LIMITS = {
-  userName: 50,
-  groupName: 60,
-  memberName: 50,
-  expenseDescription: 100,
-  email: 254,
-  passwordMin: 8,
-  passwordMax: 128,
-  /** Máximo de integrantes en la división de un gasto. */
-  splitsMax: 50,
-} as const;
+import { LIMITS } from "./limits";
+
+/** Los límites viven en ./limits.ts (sin zod) para que la UI los use sin cargar zod en el cliente. */
+export { LIMITS };
 
 export const CurrencySchema = z.enum(["ARS", "USD"]);
 export type Currency = z.infer<typeof CurrencySchema>;
