@@ -201,21 +201,23 @@ export async function nuevoContexto(
 }
 
 /**
- * Seed del branch de Neon de e2e/preview (nunca producción, ver docs/qa/e2e.md):
- * - tomas@example.com y lucia@example.com comparten el grupo "Bariloche", con el
+ * Seed de apps/web/prisma/seed.ts (#20). Solo corre contra un Postgres en localhost
+ * y sin VERCEL_ENV (guarda canSeed de apps/web/scripts/db-guard.mjs): los specs que
+ * usan SEED corren solo contra una app local con esa base (ver docs/qa/e2e.md).
+ * - tomas@example.com y lucia@example.com comparten "Viaje a Bariloche", con el
  *   invitado sin cuenta "Martín" y 2 gastos.
  * - nora@example.com no comparte ningún grupo (para los casos NOT_FOUND).
- * La contraseña sale SIEMPRE de E2E_SEED_PASSWORD; nunca se escribe en el repo.
+ * La contraseña se lee de E2E_SEED_PASSWORD (no se repite en los specs).
  */
 export const SEED = {
   tomas: { email: "tomas@example.com" },
   lucia: { email: "lucia@example.com" },
   nora: { email: "nora@example.com" },
-  grupo: { nombre: "Bariloche", invitado: "Martín", gastos: 2 },
+  grupo: { nombre: "Viaje a Bariloche", invitado: "Martín", gastos: 2 },
 } as const;
 
 /**
- * SUPUESTO (BE confirma): nombre visible de Lucía en el seed. Se busca sin
+ * Nombre visible de Lucía en el seed ("Lucía", apps/web/prisma/seed.ts). Se busca sin
  * depender de mayúsculas ni del acento.
  */
 export const NOMBRE_LUCIA = /^Luc[ií]a\b/i;
@@ -232,7 +234,7 @@ export async function ingresarComoSeed(page: Page, usuario: { email: string }) {
   await ingresarYEsperarMisGrupos(page, usuario.email, contrasenaSeed());
 }
 
-/** Abre el grupo "Bariloche" desde Mis grupos y devuelve su id. */
+/** Abre el grupo "Viaje a Bariloche" desde Mis grupos y devuelve su id. */
 export async function abrirGrupoSeed(page: Page): Promise<string> {
   await page.goto(RUTAS.grupos);
   await page.getByRole("link", { name: new RegExp(SEED.grupo.nombre) }).click();

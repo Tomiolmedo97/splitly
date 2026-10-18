@@ -3,7 +3,7 @@
  * Contrato y helpers en ./contrato.ts. Se verifica error.code, nunca el message.
  *
  * PENDIENTE: it.todo hasta que BE publique las acciones; se completan con
- * esperarError / esperarOk contra la base de prueba (branch de Neon con seed).
+ * esperarError / esperarOk contra un Postgres local con seed (ver docs/qa/e2e.md).
  */
 import { describe, it } from "vitest";
 

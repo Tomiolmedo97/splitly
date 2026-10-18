@@ -22,6 +22,9 @@
  * - listKnownUsers(): { userId, name }[], sin emails y sin uno mismo.
  */
 import { expect } from "vitest";
+import type { ActionErrorCode, ActionResult, KnownUserDTO } from "../actions/contracts";
+
+export type { ActionResult };
 
 export const CODIGOS_DE_ERROR = [
   "VALIDATION_ERROR",
@@ -36,22 +39,16 @@ export const CODIGOS_DE_ERROR = [
   "FORBIDDEN",
   "NOT_FOUND",
   "INTERNAL",
-] as const;
+] as const satisfies readonly ActionErrorCode[];
 
-export type CodigoDeError = (typeof CODIGOS_DE_ERROR)[number];
+/** Códigos reales de las Server Actions (apps/web/src/server/actions/contracts.ts, #20). */
+export type CodigoDeError = ActionErrorCode;
 
-/** Entrada de addMember. */
-export type AddMemberInput = { kind: "guest"; name: string } | { kind: "user"; userId: string };
+/** Entrada de addMember: la real (con groupId) es AddMemberInput de contracts.ts. */
+export type { AddMemberInput } from "../actions/contracts";
 
 /** Item de listKnownUsers: nunca incluye email. */
-export type KnownUser = { userId: string; name: string };
-
-export type ActionResult<T> =
-  | { ok: true; data: T }
-  | {
-      ok: false;
-      error: { code: CodigoDeError; message: string; fieldErrors?: Record<string, string[]> };
-    };
+export type KnownUser = KnownUserDTO;
 
 /** Afirma que la acción falló con ese code (el message no se mira). */
 export function esperarError<T>(resultado: ActionResult<T>, code: CodigoDeError) {

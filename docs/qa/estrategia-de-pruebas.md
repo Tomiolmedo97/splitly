@@ -22,7 +22,7 @@ Detectar antes de producción los errores que más dañan la confianza del usuar
   - el resultado es determinista (misma entrada, misma salida, sin importar el orden de entrada);
   - la simplificación greedy deja a todos en 0 y nunca genera más de n−1 transferencias.
 - **API (Vitest con Route Handlers o Playwright `request`):** códigos de estado 200/201/400/401/403/404/409, validaciones, acceso a un grupo ajeno, cambio de moneda con gastos y respuesta con los balances de antes y de después.
-- **Punta a punta (Playwright):** contra el preview de Vercel de cada PR, con el bypass de protección y el branch de Neon con seed. Navegadores: Chromium, WebKit y Pixel 5 (mobile), más un viewport de 360 px.
+- **Punta a punta (Playwright):** contra la app local con un Postgres local sembrado (el seed solo corre en localhost, ver docs/qa/e2e.md) y, para los specs que crean sus propios datos, contra el preview de Vercel de cada PR con el bypass de protección. Navegadores: Chromium, WebKit y Pixel 5 (mobile), más un viewport de 360 px.
 - **Accesibilidad (axe):** cero violaciones serias o críticas en las 5 pantallas, navegación con teclado en el formulario de gasto y `prefers-reduced-motion` emulado.
 - **Manual exploratorio:** en cada cierre de sprint, el celular real de Tomas y Safari en iOS.
 
