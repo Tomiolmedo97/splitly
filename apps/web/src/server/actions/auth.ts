@@ -147,8 +147,8 @@ export async function loginForm(_prev: AuthFormState, formData: FormData): Promi
   const values = readAuthValues("login", formData);
   // En login el largo mínimo no aplica: solo vacío o email mal escrito. Una contraseña corta
   // va a login() y termina en INVALID_CREDENTIALS, igual que cualquier contraseña incorrecta.
-  const { password: passwordError, ...fieldErrors } = validateAuth(values);
-  if (passwordError === "REQUIRED") fieldErrors.password = "REQUIRED";
+  const fieldErrors = validateAuth(values);
+  if (fieldErrors.password === "PASSWORD_TOO_SHORT") delete fieldErrors.password;
   if (Object.keys(fieldErrors).length > 0) return { status: "invalid", values: safeValues(values), fieldErrors };
 
   const result = await login({ email: values.email ?? "", password: values.password ?? "" });
