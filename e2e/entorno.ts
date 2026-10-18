@@ -2,7 +2,10 @@
  * Valores de entorno compartidos entre playwright.config.ts y los fixtures.
  * Se usan también al crear contextos a mano con browser.newContext().
  */
-export const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+import { URL_POR_DEFECTO } from "./guarda";
+
+/** La valida e2e/guarda.ts al cargar playwright.config.ts. */
+export const BASE_URL = process.env.E2E_BASE_URL?.trim() || URL_POR_DEFECTO;
 
 const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 

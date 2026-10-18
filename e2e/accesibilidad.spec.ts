@@ -11,6 +11,7 @@
  */
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
+import { SOLO_LECTURA } from "./guarda";
 import {
   RUTAS,
   TEXTOS,
@@ -45,7 +46,7 @@ async function esperarSinScrollHorizontal(page: Page) {
 
 // Se habilita cuando existan las pantallas y las Server Actions.
 test.describe.fixme("Accesibilidad con axe", () => {
-  test("Ingreso sin violaciones serias ni críticas", async ({ browser }) => {
+  test("Ingreso sin violaciones serias ni críticas", SOLO_LECTURA, async ({ browser }) => {
     const contexto = await nuevoContexto(browser);
     const page = await contexto.newPage();
     await page.goto(RUTAS.ingreso);
@@ -92,7 +93,7 @@ test.describe.fixme("Accesibilidad con axe", () => {
 
 // Se habilita cuando existan las pantallas y las Server Actions.
 test.describe.fixme("Viewport de 360 px", () => {
-  test("Ingreso entra en 360 px y el botón Ingresar se ve completo", async ({ browser }) => {
+  test("Ingreso entra en 360 px y el botón Ingresar se ve completo", SOLO_LECTURA, async ({ browser }) => {
     const contexto = await nuevoContexto(browser, { viewport: MOVIL_360, isMobile: true, hasTouch: true });
     const page = await contexto.newPage();
     await page.goto(RUTAS.ingreso);

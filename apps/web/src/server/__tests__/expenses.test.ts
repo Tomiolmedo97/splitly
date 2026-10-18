@@ -29,10 +29,13 @@ describe("efectos del soft delete en otras reglas", () => {
 
 describe("monto máximo por gasto (columnas BigInt, number en la app)", () => {
   // Máximo del MVP: $ 999.999.999,99 = 99999999999 centavos (AM-07).
-  // Texto de FE (no se fija acá): "El monto máximo por gasto es {monto}", con
-  // {monto} = formatMoney(99999999999, moneda del grupo) ($ o US$). Acá solo error.code.
+  // El servidor devuelve solo el código en fieldErrors.amountCents, sin texto ni monto.
+  // FE arma "El monto máximo por gasto es {monto}" con
+  // {monto} = formatMoney(MAX_EXPENSE_CENTS, moneda del grupo) (docs/design/textos.md).
   it.todo("un gasto de 99999999999 centavos se acepta");
-  it.todo("un gasto de 100000000000 centavos devuelve VALIDATION_ERROR con fieldErrors.amount");
+  it.todo("un gasto de 100000000000 centavos devuelve VALIDATION_ERROR con fieldErrors.amountCents");
+  it.todo("fieldErrors.amountCents trae solo el código: ni '$ 999.999.999,99' ni otro monto en el texto del servidor");
+  it.todo("el mensaje del máximo usa la moneda del grupo: '$ 999.999.999,99' en ARS y 'US$ 999.999.999,99' en USD (formatMoney de FE)");
   it.todo("el CHECK de la base rechaza un monto mayor al máximo aunque se saltee Zod (insert directo)");
   it.todo("los montos llegan a las acciones y al cliente como number, nunca como bigint (typeof === 'number')");
   it.todo("la suma de saldos con muchos gastos del máximo queda dentro de Number.MAX_SAFE_INTEGER y es exacta");
@@ -45,4 +48,8 @@ describe("pagador y participantes válidos (validación en el servicio; la FK co
   it.todo("un pagador quitado (removedAt) devuelve VALIDATION_ERROR con fieldErrors.paidByMemberId");
   it.todo("un participante quitado (removedAt) devuelve VALIDATION_ERROR con fieldErrors.splits");
   it.todo("nunca llega a la FK: el rechazo es VALIDATION_ERROR, no INTERNAL");
+});
+
+describe("división por porcentajes", () => {
+  it.todo("porcentajes que no suman 100 % (10000 puntos básicos) devuelven VALIDATION_ERROR con fieldErrors.splits");
 });
