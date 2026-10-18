@@ -110,8 +110,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         </p>
       )}
 
-      <Button type="submit" className="w-full sm:h-12" loading={isPending}>
-        {isPending ? t.submitting : t.submit}
+      <Button type="submit" className="w-full sm:h-12" loading={isPending} loadingText={t.submitting}>
+        {t.submit}
       </Button>
 
       <div role="status" aria-live="polite">

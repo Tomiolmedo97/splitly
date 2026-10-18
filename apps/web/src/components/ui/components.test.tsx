@@ -111,6 +111,32 @@ describe("Button", () => {
     expect(html).toContain("lucide-loader-circle");
   });
 
+  it("cargando: 100 % de opacidad, texto visible con el spinner delante y ancho reservado", () => {
+    const html = renderToStaticMarkup(
+      <Button type="submit" loading loadingText="Ingresando…">
+        Ingresar
+      </Button>,
+    );
+    // Solo queda `disabled:opacity-45`, que aplica al `disabled` real (no al estado de carga).
+    expect(html).not.toMatch(/aria-disabled:opacity|[\s"]opacity-(0|45)[\s"]/);
+    expect(html).toContain("disabled:opacity-45");
+    expect(html).toContain("aria-disabled:cursor-progress");
+    // Texto visible = la celda sin `invisible`: spinner y después "Ingresando…".
+    const visible = html.match(/<span class="col-start-1 row-start-1[^"]*">(.*?)<\/span><span aria-hidden="true" class="invisible/)![1]!;
+    expect(visible).toMatch(/lucide-loader-circle.*Ingresando…$/);
+    // La celda invisible reserva el ancho de "Ingresar".
+    expect(html).toMatch(/class="invisible[^"]*">Ingresar</);
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('aria-disabled="true"');
+  });
+
+  it("en reposo reserva el ancho del texto de carga, sin spinner visible", () => {
+    const html = renderToStaticMarkup(<Button loadingText="Ingresando…">Ingresar</Button>);
+    expect(html).not.toContain("aria-busy");
+    expect(html).toMatch(/row-start-1 inline-flex[^"]*">Ingresar</);
+    expect(html).toMatch(/class="invisible[^"]*">.*lucide-loader-circle.*Ingresando…/);
+  });
+
   it("deshabilitado de verdad sigue usando `disabled`", () => {
     expect(renderToStaticMarkup(<Button disabled>Guardar</Button>)).toMatch(/\sdisabled=""/);
   });

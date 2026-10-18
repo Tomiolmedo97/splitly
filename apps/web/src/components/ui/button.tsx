@@ -12,6 +12,11 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
    * conserva el foco): marca `aria-disabled="true"` y bloquea clics y envíos mientras dura.
    */
   loading?: boolean;
+  /**
+   * Texto visible mientras `loading` (p. ej. "Ingresando…"), con el spinner delante.
+   * El botón reserva el ancho del más largo de los dos textos, así no salta entre reposo y carga.
+   */
+  loadingText?: string;
 };
 
 const base =
@@ -20,8 +25,8 @@ const base =
   "enabled:not-aria-disabled:active:scale-[0.98] motion-reduce:enabled:active:scale-100 " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary " +
   "disabled:cursor-not-allowed disabled:opacity-45 sm:h-10 " +
-  // Cargando: mismo aspecto que deshabilitado, pero enfocable.
-  "aria-disabled:cursor-not-allowed aria-disabled:opacity-45";
+  // Cargando: primario al 100 % (sin opacidad), enfocable, con cursor de progreso.
+  "aria-disabled:cursor-progress";
 
 /**
  * Mientras `loading`, cancela el clic (y con eso el envío del formulario, también el implícito con Enter)
@@ -50,7 +55,7 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "primary", loading = false, disabled, className, children, type = "button", onClick, ...props },
+  { variant = "primary", loading = false, loadingText, disabled, className, children, type = "button", onClick, ...props },
   ref,
 ) {
   return (
@@ -64,13 +69,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {...props}
       onClick={guardLoadingClick(loading, onClick)}
     >
-      {/* El label sigue en el árbol de accesibilidad y define el ancho; solo se oculta visualmente. */}
-      <span className={cn("inline-flex items-center gap-2", loading && "opacity-0")}>{children}</span>
-      {loading && (
-        <span className="absolute inset-0 flex items-center justify-center" aria-hidden>
-          <LoaderCircle size={16} className="motion-safe:animate-spin" />
+      {/* Una sola celda de grilla: el texto visible y, invisible debajo, el del otro estado (ancho mínimo estable). */}
+      <span className="grid">
+        <span className="col-start-1 row-start-1 inline-flex items-center justify-center gap-2">
+          {loading && <LoaderCircle size={16} aria-hidden className="shrink-0 motion-safe:animate-spin" />}
+          {loading && loadingText ? loadingText : children}
         </span>
-      )}
+        {loadingText && (
+          <span aria-hidden className="invisible col-start-1 row-start-1 inline-flex items-center justify-center gap-2">
+            {loading ? (
+              children
+            ) : (
+              <>
+                <LoaderCircle size={16} className="shrink-0" />
+                {loadingText}
+              </>
+            )}
+          </span>
+        )}
+      </span>
     </button>
   );
 });
