@@ -53,7 +53,15 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   };
 
   return (
-    <form noValidate action={formAction} className="flex flex-col gap-6">
+    <form
+      noValidate
+      action={formAction}
+      // Segundo envío bloqueado mientras isPending (el botón queda enfocable, sin `disabled`).
+      onSubmit={(event) => {
+        if (isPending) event.preventDefault();
+      }}
+      className="flex flex-col gap-6"
+    >
       <div className="flex flex-col gap-4">
         {mode === "register" && (
           <TextField

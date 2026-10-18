@@ -89,7 +89,7 @@ export function DesignShowcase() {
             <div className="flex flex-col gap-3">
               <BalanceCard label="Resumen con monto largo" cents={99999999999} currency="USD" variant="summary" />
               <MemberList label="Fila con monto largo" className="rounded-xl border border-border bg-surface dark:border-transparent">
-                <MemberRow name="Sofi" cents={99999999999} currency="USD" withoutAccount detail="Invitada por Ana" />
+                <MemberRow name="Sofi" cents={-99999999999} currency="USD" withoutAccount detail="Invitada por Ana" />
               </MemberList>
             </div>
           </Subsection>

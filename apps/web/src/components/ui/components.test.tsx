@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { BalanceCard } from "./balance-card";
-import { Button } from "./button";
+import { Button, guardLoadingClick } from "./button";
 import { initials, MemberList, MemberRow } from "./member-row";
 import { TextField } from "./text-field";
 
@@ -71,6 +71,18 @@ describe("MemberRow", () => {
     expect(html).toMatch(/class="[^"]*min-w-\[6ch\][^"]*">Sofi</);
   });
 
+  it("layout: monto sin achicarse, etiqueta que puede bajar y monto a 2ª línea con la fila < 330 px", () => {
+    const html = renderToStaticMarkup(
+      <MemberRow name="Sofi" cents={-99999999999} currency="USD" withoutAccount detail="Invitada por Ana" />,
+    );
+    expect(html).toMatch(/<li class="@container relative/);
+    expect(html).toMatch(/class="[^"]*shrink-0[^"]*whitespace-nowrap[^"]*@max-\[330px\]:basis-full[^"]*@max-\[330px\]:justify-end/);
+    const badge = html.match(/<span class="([^"]*)">sin cuenta</)![1]!;
+    expect(badge).not.toContain("shrink-0");
+    expect(html).toContain("flex min-w-0 flex-1 flex-wrap");
+    expect(text(html)).toContain(nb("−US$ 999.999.999,99"));
+  });
+
   it("sin badge por defecto", () => {
     const html = renderToStaticMarkup(<MemberRow name="Ana" cents={100} currency="ARS" />);
     expect(text(html)).not.toContain("sin cuenta");
@@ -90,11 +102,34 @@ describe("Button", () => {
     expect(html).toContain("focus-visible:outline-primary");
   });
 
-  it("cargando: deshabilitado, aria-busy y conserva el label accesible", () => {
-    const html = renderToStaticMarkup(<Button loading>Guardar</Button>);
-    expect(html).toContain("disabled");
+  it("cargando: aria-disabled sin `disabled` (conserva el foco), aria-busy y el label accesible", () => {
+    const html = renderToStaticMarkup(<Button type="submit" loading>Guardar</Button>);
+    expect(html).not.toMatch(/\sdisabled(=""|\s|>)/);
+    expect(html).toContain('aria-disabled="true"');
     expect(html).toContain('aria-busy="true"');
     expect(text(html)).toContain("Guardar");
+    expect(html).toContain("lucide-loader-circle");
+  });
+
+  it("deshabilitado de verdad sigue usando `disabled`", () => {
+    expect(renderToStaticMarkup(<Button disabled>Guardar</Button>)).toMatch(/\sdisabled=""/);
+  });
+
+  it("cargando: cancela el clic (y el envío) sin llamar a onClick; sin cargar, lo deja pasar", () => {
+    const fakeEvent = () => {
+      const e = { defaultPrevented: false, preventDefault() { e.defaultPrevented = true; } };
+      return e as unknown as Parameters<ReturnType<typeof guardLoadingClick>>[0] & { defaultPrevented: boolean };
+    };
+    let calls = 0;
+    const onClick = () => { calls++; };
+    const pending = fakeEvent();
+    guardLoadingClick(true, onClick)(pending);
+    expect(pending.defaultPrevented).toBe(true);
+    expect(calls).toBe(0);
+    const idle = fakeEvent();
+    guardLoadingClick(false, onClick)(idle);
+    expect(idle.defaultPrevented).toBe(false);
+    expect(calls).toBe(1);
   });
 });
 
