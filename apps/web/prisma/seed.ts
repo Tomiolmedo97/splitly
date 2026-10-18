@@ -1,6 +1,6 @@
 /**
- * Seed de datos de ejemplo. SOLO corre en local o en previews de Vercel
- * (branch de Neon del preview). Nunca en producción.
+ * Seed de datos de ejemplo. SOLO corre contra un Postgres en localhost o en previews
+ * de Vercel (branch de Neon del preview). Nunca en producción.
  *
  *   pnpm --filter @splitly/web db:seed
  *
@@ -15,19 +15,18 @@ import { PrismaClient } from "@prisma/client";
 import { splitEqual, splitPercent } from "@splitly/core";
 import { toDbCents } from "../src/lib/cents";
 import { hashPassword } from "../src/lib/password";
+import { canSeed } from "../scripts/db-guard.mjs";
 
 const DEMO_PASSWORD = "splitly-demo-123";
 
-/** Permite el seed en local (sin VERCEL_ENV) o en previews; lo bloquea en cualquier otro caso. */
-export function canSeed(env: NodeJS.ProcessEnv): boolean {
-  if (env.VERCEL_ENV === "preview") return true;
-  return env.VERCEL_ENV === undefined && env.NODE_ENV !== "production";
-}
+// Solo con DATABASE_URL a localhost, o en un preview cuyas URLs seguro no son las de
+// producción (ver scripts/db-guard.mjs). Se niega aunque falte VERCEL_ENV.
+export { canSeed };
 
 async function main() {
   if (!canSeed(process.env)) {
     console.error(
-      `Seed bloqueado: solo corre en local o con VERCEL_ENV=preview (VERCEL_ENV=${process.env.VERCEL_ENV ?? "-"}, NODE_ENV=${process.env.NODE_ENV ?? "-"}).`,
+      `Seed bloqueado: solo corre con DATABASE_URL a localhost, o en un preview con PROD_DB_HOST cargado y URLs que no son las de producción (VERCEL_ENV=${process.env.VERCEL_ENV ?? "-"}).`,
     );
     process.exit(1);
   }
