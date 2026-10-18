@@ -36,6 +36,8 @@ function mix(fg: string, alpha: number, bg: string): string {
 describe.each([
   ["claro", "@theme {", mentaLight.colors],
   ["oscuro", '.dark,\n[data-theme="dark"]', mentaDark.colors],
+  ["claro forzado", '.light,\n[data-theme="light"]', mentaLight.colors],
+  ["oscuro sistema", ':root:not([data-theme="light"]):not(.light) {', mentaDark.colors],
 ] as const)("tokens Menta %s", (_name, selector, colors) => {
   const tokens = block(selector);
 
