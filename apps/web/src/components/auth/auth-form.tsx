@@ -1,75 +1,83 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, type FormEvent } from "react";
-import { Info } from "lucide-react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { CircleAlert, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
 import { copy } from "@/lib/copy";
-import { validateAuth, type AuthField, type AuthFieldErrors, type AuthValues } from "@/lib/auth-validation";
-
-type Mode = "login" | "register";
-
-const fieldsByMode: Record<Mode, readonly AuthField[]> = {
-  login: ["email", "password"],
-  register: ["name", "email", "password"],
-};
+import {
+  authFieldsByMode,
+  createStubAuthAction,
+  focusTargetAfterSubmit,
+  initialAuthState,
+  type AuthMode,
+} from "@/lib/auth-action";
+import { errorText } from "@/lib/error-copy";
+import { fieldErrorCopy, PASSWORD_MIN_LENGTH, type AuthField } from "@/lib/auth-validation";
 
 const linkClass =
   "font-medium text-primary underline-offset-4 hover:underline rounded-sm " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 /**
- * Formulario visual de ingreso/registro. Valida solo en el cliente y todavía no guarda nada:
- * al enviar muestra un aviso de "próximamente" que no bloquea el formulario.
+ * Formulario visual de ingreso/registro con useActionState. Por ahora usa una acción stub
+ * (valida y no guarda nada): al enviar muestra un aviso de "próximamente" que no bloquea el formulario.
  */
-export function AuthForm({ mode }: { mode: Mode }) {
-  const fields = fieldsByMode[mode];
-  const [errors, setErrors] = useState<AuthFieldErrors>({});
-  const [notice, setNotice] = useState(false);
+export function AuthForm({ mode }: { mode: AuthMode }) {
+  const fields = authFieldsByMode[mode];
+  const action = useMemo(() => createStubAuthAction(mode), [mode]);
+  const [state, formAction, isPending] = useActionState(action, initialAuthState);
+  // Campos editados desde el último envío: su error se oculta hasta el próximo envío.
+  const [edited, setEdited] = useState<Partial<Record<AuthField, boolean>>>({});
   const refs = useRef<Partial<Record<AuthField, HTMLInputElement | null>>>({});
   const t = mode === "login" ? copy.login : copy.register;
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const values: AuthValues = Object.fromEntries(fields.map((f) => [f, String(data.get(f) ?? "")]));
-    const next = validateAuth(values);
-    setErrors(next);
-    const firstInvalid = fields.find((f) => next[f]);
-    if (firstInvalid) {
-      setNotice(false);
-      refs.current[firstInvalid]?.focus();
-      return;
-    }
-    setNotice(true);
-  };
+  // Cada acción devuelve un estado nuevo: después de un envío fallido, foco al primer campo con error
+  // o, si el error es del formulario (p. ej. INVALID_CREDENTIALS), a la contraseña. Sin autoFocus.
+  useEffect(() => {
+    setEdited({});
+    const target = focusTargetAfterSubmit(state, fields);
+    if (target) refs.current[target]?.focus();
+  }, [state, fields]);
 
-  const clearError = (field: AuthField) => {
-    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
+  const errorFor = (field: AuthField) => {
+    const code = state.fieldErrors[field];
+    return code && !edited[field] ? fieldErrorCopy[code] : undefined;
+  };
+  const markEdited = (field: AuthField) => {
+    if (state.fieldErrors[field] && !edited[field]) setEdited((e) => ({ ...e, [field]: true }));
+  };
+  const bindRef = (field: AuthField) => (el: HTMLInputElement | null) => {
+    refs.current[field] = el;
   };
 
   return (
-    <form noValidate onSubmit={onSubmit} className="flex flex-col gap-6">
+    <form
+      noValidate
+      action={formAction}
+      // Segundo envío bloqueado mientras isPending (el botón queda enfocable, sin `disabled`).
+      onSubmit={(event) => {
+        if (isPending) event.preventDefault();
+      }}
+      className="flex flex-col gap-6"
+    >
       <div className="flex flex-col gap-4">
         {mode === "register" && (
           <TextField
-            ref={(el) => {
-              refs.current.name = el;
-            }}
+            ref={bindRef("name")}
             name="name"
             label={copy.register.nameLabel}
             placeholder={copy.register.namePlaceholder}
             autoComplete="name"
             required
-            error={errors.name}
-            onChange={() => clearError("name")}
+            defaultValue={state.values.name}
+            error={errorFor("name")}
+            onChange={() => markEdited("name")}
           />
         )}
         <TextField
-          ref={(el) => {
-            refs.current.email = el;
-          }}
+          ref={bindRef("email")}
           name="email"
           type="email"
           inputMode="email"
@@ -77,31 +85,37 @@ export function AuthForm({ mode }: { mode: Mode }) {
           placeholder={copy.login.emailPlaceholder}
           autoComplete="email"
           required
-          error={errors.email}
-          onChange={() => clearError("email")}
+          defaultValue={state.values.email}
+          error={errorFor("email")}
+          onChange={() => markEdited("email")}
         />
         <TextField
-          ref={(el) => {
-            refs.current.password = el;
-          }}
+          ref={bindRef("password")}
           name="password"
           type="password"
           label={t.passwordLabel}
           hint={mode === "register" ? copy.register.passwordHint : undefined}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
-          minLength={8}
+          minLength={PASSWORD_MIN_LENGTH}
           required
-          error={errors.password}
-          onChange={() => clearError("password")}
+          error={errorFor("password")}
+          onChange={() => markEdited("password")}
         />
       </div>
 
-      <Button type="submit" className="w-full sm:h-12">
+      {state.status === "error" && state.formError && (
+        <p role="alert" className="flex items-start gap-2 text-sm text-negative">
+          <CircleAlert size={16} aria-hidden className="mt-0.5 shrink-0" />
+          {errorText({ code: state.formError })}
+        </p>
+      )}
+
+      <Button type="submit" className="w-full sm:h-12" loading={isPending} loadingText={t.submitting}>
         {t.submit}
       </Button>
 
       <div role="status" aria-live="polite">
-        {notice && (
+        {state.status === "coming-soon" && !isPending && (
           <p className="flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm text-text">
             <Info size={16} aria-hidden className="mt-0.5 shrink-0 text-primary" />
             {copy.general.comingSoon}

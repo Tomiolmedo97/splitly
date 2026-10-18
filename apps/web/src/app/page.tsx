@@ -1,7 +1,6 @@
-export default function HomePage() {
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-4xl font-bold">Hola Splitly</h1>
-    </main>
-  );
+import { redirect } from "next/navigation";
+
+/** Por ahora la home es el ingreso. Redirección del lado del servidor. */
+export default function HomePage(): never {
+  redirect("/ingresar");
 }

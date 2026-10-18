@@ -77,10 +77,20 @@ export function DesignShowcase() {
 
         <Section id="componentes" title="Componentes base">
           <Subsection title="Tarjeta de saldo">
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3">
               <BalanceCard label="Tu saldo en Bariloche" cents={450000} currency={currency} />
               <BalanceCard label="Tu saldo en el depto" cents={-150000} currency={currency} />
               <BalanceCard label="Tu saldo en el cumple" cents={0} currency={currency} />
+              <BalanceCard label="Grilla con monto largo" cents={99999999999} currency="USD" />
+            </div>
+          </Subsection>
+
+          <Subsection title="Montos largos">
+            <div className="flex flex-col gap-3">
+              <BalanceCard label="Resumen con monto largo" cents={99999999999} currency="USD" variant="summary" />
+              <MemberList label="Fila con monto largo" className="rounded-xl border border-border bg-surface dark:border-transparent">
+                <MemberRow name="Sofi" cents={-99999999999} currency="USD" withoutAccount detail="Invitada por Ana" />
+              </MemberList>
             </div>
           </Subsection>
 

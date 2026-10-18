@@ -5,7 +5,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, ArrowUp, Check } from "lucide-react";
 import { formatMoney, type Currency } from "@/lib/format-money";
 import { cn } from "@/lib/cn";
-import { balanceStatus } from "./balance-status";
+import { copy } from "@/lib/copy";
+import { balanceStatus, displayStatus } from "./balance-status";
 import { useCountUp } from "./use-count-up";
 
 export type MemberRowProps = {
@@ -29,20 +30,21 @@ export function initials(name: string): string {
   return letters.filter(Boolean).join("").toLocaleUpperCase("es-AR");
 }
 
-const srStatus = { positive: "le deben", negative: "debe", settled: "está al día" } as const;
+const srStatus = copy.member.srStatus;
 
 /** Fila de una persona del grupo. Renderiza un `<li>`: usala dentro de `<MemberList>`. */
 export function MemberRow({ name, cents, currency, detail, withoutAccount, animated = false, celebrate }: MemberRowProps) {
   const reduce = useReducedMotion();
   const display = useCountUp(cents, animated);
-  // Estado visual según el valor mostrado (cuenta animada); el texto para lectores usa el final.
-  const status = balanceStatus(display);
+  // Signo, color y flecha según el valor mostrado; "Al día" solo si el saldo final es 0. Lectores: valor final.
+  const status = displayStatus(display, cents);
   const finalStatus = balanceStatus(cents);
 
   return (
     <li
       className={cn(
-        "relative flex min-h-14 items-center gap-3 px-3 py-2",
+        // La fila es el contenedor de la query que decide si el monto baja a una segunda línea.
+        "@container relative",
         // Separador de 1 px con inset de 56 px (12 de padding + 32 de avatar + 12 de gap).
         "after:absolute after:right-0 after:bottom-0 after:left-14 after:h-px after:bg-border last:after:hidden",
       )}
@@ -56,60 +58,74 @@ export function MemberRow({ name, cents, currency, detail, withoutAccount, anima
           transition={{ duration: 1.2 }}
         />
       )}
-      <span
-        aria-hidden
-        className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-text"
-      >
-        {initials(name)}
-      </span>
       {/*
-        El nombre conserva al menos 6 caracteres visibles. Si no entra junto a la etiqueta "sin cuenta"
-        (columna < 160 px), la etiqueta baja a la segunda línea, al lado del detalle.
+        Fila de menos de 330 px: el monto baja a una segunda línea, alineado a la derecha debajo del nombre,
+        mismo tamaño y con la flecha. Umbral medido: con "−US$ 999.999.999,99" (183 px a 16 px) el nombre
+        necesita 80 (padding + avatar + gaps) + 183 + 64 (6ch) = 327 px de fila para mostrar 6 caracteres.
       */}
-      <span className="@container relative min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-x-2">
-          <span className="min-w-[6ch] truncate text-base text-text @max-[160px]:basis-full">{name}</span>
+      <div className="relative flex min-h-14 items-center gap-3 px-3 py-2 @max-[330px]:flex-wrap @max-[330px]:gap-y-1">
+        <span
+          aria-hidden
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-text"
+        >
+          {initials(name)}
+        </span>
+        {/*
+          Columna del nombre: el nombre conserva al menos 6 caracteres. "sin cuenta" puede achicarse y,
+          si no entra al lado del nombre, baja sola a la segunda línea, junto al detalle.
+        */}
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2">
+          <span className="min-w-[6ch] truncate text-base text-text">{name}</span>
           {withoutAccount && (
-            <span className="shrink-0 rounded-full border border-border px-2 text-xs leading-5 text-muted">
-              sin cuenta
+            <span className="min-w-0 truncate rounded-full border border-border px-2 text-xs leading-5 text-muted">
+              {copy.member.withoutAccount}
             </span>
           )}
           {detail && (
-            <span className="min-w-0 basis-full truncate text-sm text-muted @max-[160px]:flex-1 @max-[160px]:basis-auto">
+            <span
+              className={cn(
+                "truncate text-sm text-muted",
+                // Con etiqueta: el detalle crece pero exige el ancho de la columna menos lo que ocupa la etiqueta.
+                // Si la etiqueta quedó al lado del nombre, no entra ahí y baja; si la etiqueta bajó, entra a su lado.
+                withoutAccount ? "min-w-[calc(100%-6.5rem)] grow basis-0" : "min-w-0 basis-full",
+              )}
+            >
               {detail}
             </span>
           )}
         </span>
-      </span>
-      <span
-        className={cn(
-          "relative flex shrink-0 items-center gap-1 text-base font-semibold whitespace-nowrap tabular-nums",
-          status === "positive" && "text-positive",
-          status === "negative" && "text-negative",
-          status === "settled" && "text-text",
-        )}
-      >
-        <span className="sr-only">
-          {finalStatus === "settled"
-            ? srStatus.settled
-            : `${srStatus[finalStatus]}: ${formatMoney(cents, currency, { showPlus: true })}`}
+        <span
+          className={cn(
+            // El monto nunca se achica ni se trunca.
+            "flex shrink-0 items-center gap-1 text-base font-semibold whitespace-nowrap tabular-nums",
+            "@max-[330px]:basis-full @max-[330px]:justify-end @max-[330px]:pl-11",
+            status === "positive" && "text-positive",
+            status === "negative" && "text-negative",
+            status === "settled" && "text-text",
+          )}
+        >
+          <span className="sr-only">
+            {finalStatus === "settled"
+              ? srStatus.settled
+              : `${srStatus[finalStatus]}: ${formatMoney(cents, currency, { showPlus: true })}`}
+          </span>
+          {status === "settled" ? (
+            <>
+              <span aria-hidden>{copy.balance.settled}</span>
+              <Check size={16} aria-hidden />
+            </>
+          ) : (
+            <>
+              {status === "positive" ? (
+                <ArrowUp size={14} aria-hidden className="shrink-0" />
+              ) : (
+                <ArrowDown size={14} aria-hidden className="shrink-0" />
+              )}
+              <span aria-hidden>{formatMoney(display, currency, { showPlus: true })}</span>
+            </>
+          )}
         </span>
-        {status === "settled" ? (
-          <>
-            <span aria-hidden>Al día</span>
-            <Check size={16} aria-hidden />
-          </>
-        ) : (
-          <>
-            {status === "positive" ? (
-              <ArrowUp size={14} aria-hidden className="shrink-0" />
-            ) : (
-              <ArrowDown size={14} aria-hidden className="shrink-0" />
-            )}
-            <span aria-hidden>{formatMoney(display, currency, { showPlus: true })}</span>
-          </>
-        )}
-      </span>
+      </div>
     </li>
   );
 }

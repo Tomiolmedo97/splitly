@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { BalanceCard } from "./balance-card";
-import { Button } from "./button";
+import { Button, guardLoadingClick } from "./button";
 import { initials, MemberList, MemberRow } from "./member-row";
 import { TextField } from "./text-field";
 
@@ -12,7 +12,7 @@ const nb = (s: string) => s.replace(/ /g, "\u00a0");
 describe("BalanceCard", () => {
   it("positivo: signo +, texto e ícono (no solo color)", () => {
     const html = renderToStaticMarkup(<BalanceCard cents={450000} currency="ARS" />);
-    expect(text(html)).toContain(nb("+ $ 4.500,00"));
+    expect(text(html)).toContain(nb("+$ 4.500,00"));
     expect(text(html)).toContain("Te deben");
     expect(html).toContain("lucide-arrow-up");
     expect(html).toContain("text-positive");
@@ -20,21 +20,19 @@ describe("BalanceCard", () => {
 
   it("negativo: signo −, texto e ícono", () => {
     const html = renderToStaticMarkup(<BalanceCard cents={-150000} currency="USD" />);
-    expect(text(html)).toContain(nb("− US$ 1.500,00"));
+    expect(text(html)).toContain(nb("−US$ 1.500,00"));
     expect(text(html)).toContain("Debés");
     expect(html).toContain("lucide-arrow-down");
     expect(html).toContain("text-negative");
   });
 
-  it("variantes de tamaño: 40 solo en resumen, 28 en grilla y 20 bajo 240 px; nunca trunca", () => {
+  it("variantes de tamaño por ancho: resumen 40/28/20 (360, 240), grilla 28/20 (240); nunca trunca", () => {
     const summary = renderToStaticMarkup(<BalanceCard cents={450000} currency="USD" variant="summary" />);
     const grid = renderToStaticMarkup(<BalanceCard cents={450000} currency="USD" />);
-    expect(summary).toContain("text-[40px]");
-    expect(summary).toContain("@max-[360px]:text-[28px]");
-    expect(grid).toContain("text-[28px]");
+    expect(summary).toContain("text-[40px] @max-[360px]:text-[28px] @max-[240px]:text-[20px]");
+    expect(grid).toContain("text-[28px] @max-[240px]:text-[20px]");
     expect(grid).not.toContain("text-[40px]");
     for (const html of [summary, grid]) {
-      expect(html).toContain("@max-[240px]:text-[20px]");
       expect(html).toContain("whitespace-nowrap");
       expect(html).not.toMatch(/truncate|text-ellipsis|overflow-hidden/);
     }
@@ -57,20 +55,32 @@ describe("MemberRow", () => {
     );
     expect(text(html)).toContain("Sofi");
     expect(text(html)).toContain("sin cuenta");
-    expect(text(html)).toContain(nb("− $ 3.000,00"));
+    expect(text(html)).toContain(nb("−$ 3.000,00"));
     expect(text(html)).toContain("debe:");
     expect(html).toContain("lucide-arrow-down");
   });
 
   it("positivo: flecha arriba de 14 px antes del monto", () => {
     const html = renderToStaticMarkup(<MemberRow name="Ana" cents={100} currency="ARS" />);
-    expect(html).toMatch(/lucide-arrow-up[^>]*>.*\+\u00a0\$\u00a01,00/);
+    expect(html).toMatch(/lucide-arrow-up[^>]*>.*\+\$\u00a01,00/);
     expect(html).toContain('width="14"');
   });
 
   it("el nombre conserva al menos 6 caracteres", () => {
     const html = renderToStaticMarkup(<MemberRow name="Sofi" cents={-1} currency="ARS" withoutAccount />);
     expect(html).toMatch(/class="[^"]*min-w-\[6ch\][^"]*">Sofi</);
+  });
+
+  it("layout: monto sin achicarse, etiqueta que puede bajar y monto a 2ª línea con la fila < 330 px", () => {
+    const html = renderToStaticMarkup(
+      <MemberRow name="Sofi" cents={-99999999999} currency="USD" withoutAccount detail="Invitada por Ana" />,
+    );
+    expect(html).toMatch(/<li class="@container relative/);
+    expect(html).toMatch(/class="[^"]*shrink-0[^"]*whitespace-nowrap[^"]*@max-\[330px\]:basis-full[^"]*@max-\[330px\]:justify-end/);
+    const badge = html.match(/<span class="([^"]*)">sin cuenta</)![1]!;
+    expect(badge).not.toContain("shrink-0");
+    expect(html).toContain("flex min-w-0 flex-1 flex-wrap");
+    expect(text(html)).toContain(nb("−US$ 999.999.999,99"));
   });
 
   it("sin badge por defecto", () => {
@@ -92,11 +102,60 @@ describe("Button", () => {
     expect(html).toContain("focus-visible:outline-primary");
   });
 
-  it("cargando: deshabilitado, aria-busy y conserva el label accesible", () => {
-    const html = renderToStaticMarkup(<Button loading>Guardar</Button>);
-    expect(html).toContain("disabled");
+  it("cargando: aria-disabled sin `disabled` (conserva el foco), aria-busy y el label accesible", () => {
+    const html = renderToStaticMarkup(<Button type="submit" loading>Guardar</Button>);
+    expect(html).not.toMatch(/\sdisabled(=""|\s|>)/);
+    expect(html).toContain('aria-disabled="true"');
     expect(html).toContain('aria-busy="true"');
     expect(text(html)).toContain("Guardar");
+    expect(html).toContain("lucide-loader-circle");
+  });
+
+  it("cargando: 100 % de opacidad, texto visible con el spinner delante y ancho reservado", () => {
+    const html = renderToStaticMarkup(
+      <Button type="submit" loading loadingText="Ingresando…">
+        Ingresar
+      </Button>,
+    );
+    // Solo queda `disabled:opacity-45`, que aplica al `disabled` real (no al estado de carga).
+    expect(html).not.toMatch(/aria-disabled:opacity|[\s"]opacity-(0|45)[\s"]/);
+    expect(html).toContain("disabled:opacity-45");
+    expect(html).toContain("aria-disabled:cursor-progress");
+    // Texto visible = la celda sin `invisible`: spinner y después "Ingresando…".
+    const visible = html.match(/<span class="col-start-1 row-start-1[^"]*">(.*?)<\/span><span aria-hidden="true" class="invisible/)![1]!;
+    expect(visible).toMatch(/lucide-loader-circle.*Ingresando…$/);
+    // La celda invisible reserva el ancho de "Ingresar".
+    expect(html).toMatch(/class="invisible[^"]*">Ingresar</);
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('aria-disabled="true"');
+  });
+
+  it("en reposo reserva el ancho del texto de carga, sin spinner visible", () => {
+    const html = renderToStaticMarkup(<Button loadingText="Ingresando…">Ingresar</Button>);
+    expect(html).not.toContain("aria-busy");
+    expect(html).toMatch(/row-start-1 inline-flex[^"]*">Ingresar</);
+    expect(html).toMatch(/class="invisible[^"]*">.*lucide-loader-circle.*Ingresando…/);
+  });
+
+  it("deshabilitado de verdad sigue usando `disabled`", () => {
+    expect(renderToStaticMarkup(<Button disabled>Guardar</Button>)).toMatch(/\sdisabled=""/);
+  });
+
+  it("cargando: cancela el clic (y el envío) sin llamar a onClick; sin cargar, lo deja pasar", () => {
+    const fakeEvent = () => {
+      const e = { defaultPrevented: false, preventDefault() { e.defaultPrevented = true; } };
+      return e as unknown as Parameters<ReturnType<typeof guardLoadingClick>>[0] & { defaultPrevented: boolean };
+    };
+    let calls = 0;
+    const onClick = () => { calls++; };
+    const pending = fakeEvent();
+    guardLoadingClick(true, onClick)(pending);
+    expect(pending.defaultPrevented).toBe(true);
+    expect(calls).toBe(0);
+    const idle = fakeEvent();
+    guardLoadingClick(false, onClick)(idle);
+    expect(idle.defaultPrevented).toBe(false);
+    expect(calls).toBe(1);
   });
 });
 
@@ -113,6 +172,17 @@ describe("TextField", () => {
     expect(html).toContain('aria-describedby="email-error"');
     expect(html).toContain('id="email-error"');
     expect(html).toContain("lucide-circle-alert");
+  });
+
+  it("aria-describedby solo apunta a elementos renderizados (ayuda solo sin error)", () => {
+    const withHint = renderToStaticMarkup(<TextField label="Contraseña" id="pw" hint="Mínimo 8 caracteres" />);
+    expect(withHint).toContain('aria-describedby="pw-hint"');
+    expect(withHint).toContain('id="pw-hint"');
+    const withError = renderToStaticMarkup(
+      <TextField label="Contraseña" id="pw" hint="Mínimo 8 caracteres" error="Completá este campo" />,
+    );
+    expect(withError).toContain('aria-describedby="pw-error"');
+    expect(withError).not.toContain("pw-hint");
   });
 
   it("contraseña: botón 'ver' con aria-label", () => {
